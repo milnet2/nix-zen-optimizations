@@ -8,7 +8,7 @@
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; {
         inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
-            ncurses binutils; }
+            ncurses; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -115,7 +115,7 @@ let
 
          }).override {
             enableLTO = true;
-            enableOptimizations = true; # Makes build non-reproducible!!
+            enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
             readline = unoptimizedPkgs.readline;
