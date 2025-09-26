@@ -39,7 +39,7 @@ The implementation covers the following languages:
 | Haskell   |                                           | ❌ #Compile error#, #not idiomatic nix#
 | Julia     |                                           | ❌ #Compile error#, tests disabled
 | R         |                                           | ❌ #Compile error#, need to update test-assertions
-| Zig       | | #Compile error#, #test is bullshit#
+| Zig       |                                           | ❌ #Compile error#, #test is bullshit#
 |===
 
 === Open work
