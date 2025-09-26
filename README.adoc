@@ -32,7 +32,7 @@ The implementation covers the following languages:
 
 | C         | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
 | C++       | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
-| Go        | |
+| Go        |                                           | ❌ #Compile error#, tests disabled
 | Rust      |                                           | ❌ #Compile error#, tests disabled
 | Python 3  | Interpreter compiled with optimizations   | ❌ #Compile error#, tests disabled
 | Fortran   | |
