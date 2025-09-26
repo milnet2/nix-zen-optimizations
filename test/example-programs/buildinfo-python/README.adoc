@@ -1,0 +1,22 @@
+== Buildinfo Python Program
+
+This is a simple Python program that prints interpreter and system information in JSON format to stdout.
+It's useful for assessing Python environment configuration in Nix.
+
+=== Building with Nix
+
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+./result/bin/buildinfo.py
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
+./result/bin/buildinfo.py
+----

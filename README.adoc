@@ -19,7 +19,7 @@ pkgsTuned = import ./zen-optimized-pkgs.nix {
 
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
 
-WANING:: I'm no expert in this so the approaches may be unorthodox or not work properly.
+CAUTION:: I'm no expert in this so the approaches may be unorthodox or not work properly.
     I've added some tests which seem to work, though.
 
 === Covered languages
@@ -30,23 +30,23 @@ The implementation covers the following languages:
 |===
 |Language |Mechanism |Status
 
-| C         | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
-| C++       | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
-| Go        | |
-| Rust      | |
-| Python 3  | Interpreter compiled with optimizations   |
-| Fortran   | |
-| Haskell   | |
-| Julia     | |
-| R         | |
-| Zig       | |
+| C         | Wrapper -script around system `gcc`       | ✅ tests pass - #double check#
+| C++       | Wrapper -script around system `gcc`       | ✅ tests pass - #double check#
+| Go        |                                           | ❌ #Compile error#, tests disabled
+| Rust      |                                           | ❌ #Compile error#, tests disabled
+| Python 3  | Interpreter compiled with optimizations   | ❌ #Compile error#, tests disabled
+| Fortran   | Wrapper -script around system `gfortran`  | ✅ tests pass
+| Haskell   |                                           | ❌ #Compile error#, #not idiomatic nix#
+| Julia     |                                           | ❌ #Compile error#, tests disabled
+| R         |                                           | ❌ #Compile error#, need to update test-assertions
+| Zig       |                                           | ❌ #Compile error#, #test is bullshit#
 |===
 
 === Open work
 
 * Properly use `lto`
 * Use the _ROCM_ packages
-* OpenMP
+* OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
 
 === Run tests
 
