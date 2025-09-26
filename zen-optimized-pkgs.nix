@@ -69,7 +69,10 @@ let
                     --set-default GOFLAGS "${optimizedPlatform.platform.go.GOFLAGS}"
                '';
         } // {
-            inherit (prev.go) badTargetPlatforms passthru;
+            inherit (prev.go) badTargetPlatforms passthru GOOS;
+            # Preserve/define attributes used by some packages at eval-time
+            GOARCH = "${optimizedPlatform.platform.go.GOARCH}";
+            GOAMD64 = "${optimizedPlatform.platform.go.GOAMD64}";
             meta = prev.go.meta // {
                 platforms = [ optimizedPlatform.platform ]; };
         };}
