@@ -5,7 +5,9 @@
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
-    optimizationParameter ? "-O3"
+    optimizationParameter ? "-O3",
+    noOptimizePkgs ? with (import importablePkgsDelegate {}); {
+        inherit gnum4;}
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -208,6 +210,7 @@ in import importablePkgsDelegate rec {
        zigOverlay
 
        openBlasOverlay
+       (final: prev: noOptimizePkgs)
     ];
 
     config.replaceStdenv = { pkgs, ...}:
