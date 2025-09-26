@@ -6,7 +6,7 @@
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
-    noOptimizePkgs ? with (import importablePkgsDelegate {}); {
+    noOptimizePkgs ? with unoptimizedPkgs; {
         inherit gnum4 bash bison gettext texinfo; } # TODO: Does this have an effect?
 }:
 let
