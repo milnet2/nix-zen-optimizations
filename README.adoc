@@ -1,0 +1,61 @@
+== Compile programs optimized for Zen using nix
+
+Contains facilities for installing programs on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
+
+The intended use of it is through an "alternative" `pkgs` from the system like:
+
+[source,nix]
+----
+# Where this would be your regular one
+pkgs = import <nixpkgs> {};
+
+# There can be an additional
+pkgsTuned = import ./zen-optimized-pkgs.nix {
+    inherit  lib;
+    importablePkgsDelegate = <nixpkgs>;
+    amdZenVersion = 2;
+    ltoLevel = "thin"; };
+----
+
+The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
+
+WANING:: I'm no expert in this so the approaches may be unorthodox or not work properly.
+    I've added some tests which seem to work, though.
+
+=== Covered languages
+
+The implementation covers the following languages:
+
+[cols="1,3,1"]
+|===
+|Language |Mechanism |Status
+
+| C         | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
+| C++       | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
+| Go        | |
+| Rust      | |
+| Python 3  | Interpreter compiled with optimizations   |
+| Fortran   | |
+| Haskell   | |
+| Julia     | |
+| R         | |
+| Zig       | |
+|===
+
+=== Open work
+
+* Properly use `lto`
+* Use the _ROCM_ packages
+* OpenMP
+
+=== Run tests
+
+Tests compile simple programs in the individual languages and inspect their output.
+To execute all the tests run
+
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
+----
+
+

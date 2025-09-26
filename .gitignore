@@ -1,0 +1,6 @@
+.idea
+*.iml
+*.swp
+*.swo
+a.out
+result
