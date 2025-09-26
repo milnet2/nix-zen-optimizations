@@ -4,6 +4,8 @@
     lib ? (import importablePkgsDelegate {}).lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin",
+    noOptimizePkgs ? with (import importablePkgsDelegate {}); {
+        inherit gnum4;}
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -233,5 +235,6 @@ in import importablePkgsDelegate rec {
        zigOverlay
 
        openBlasOverlay
+       (final: prev: noOptimizePkgs)
     ];
 }
