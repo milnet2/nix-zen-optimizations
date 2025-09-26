@@ -1,9 +1,17 @@
 # Provides a `pkgs` for optimized code
 {
-    importablePkgsDelegate ? <nixpkgs>,
-    lib ? (import importablePkgsDelegate {}).lib,
+    importablePkgsDelegate ? <nixpkgs>, # The optimized packages will be based on this
+    unoptimizedPkgs ? (import importablePkgsDelegate {}), # This is a `pkgs`. If we want a package without optimizations we'll pull it from here
+    lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
-    ltoLevel ? "thin",
+    ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
+    noOptimizePkgs ? with unoptimizedPkgs; {
+        inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
+            ncurses
+            autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
+            # Hardly CPU-bund so we'll also skip
+            sqlite gdbm
+            ; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -105,8 +113,20 @@ let
     });
 
     pythonOverlay = (final: prev: {
-        python3 = (prev.python3.override { })
-              .override {
+        # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
+        python3 = (prev.python3.override {
+
+         }).override {
+            enableLTO = true;
+            enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
+            reproducibleBuild = false; # only disables tests
+
+            readline = unoptimizedPkgs.readline;
+            tzdata = unoptimizedPkgs.tzdata;
+            mailcap = unoptimizedPkgs.mailcap;
+            bluez-headers = unoptimizedPkgs.bluez-headers;
+            bashNonInteractive = unoptimizedPkgs.bashNonInteractive;
+
                 packageOverrides = pyFinal: pyPrev: {
                   numpy = pyPrev.numpy.override {
                     blas = final.blas;
@@ -194,6 +214,7 @@ let
 in import importablePkgsDelegate rec {
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
+    inherit noOptimizePkgs;
 
     config.replaceStdenv = { pkgs, ...}:
         let
@@ -223,6 +244,8 @@ in import importablePkgsDelegate rec {
        });
 
     overlays = [
+       (final: prev: noOptimizePkgs)
+
        fortranOverlay
        goOverlay
        haskellOverlay
