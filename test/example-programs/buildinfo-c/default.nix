@@ -8,8 +8,16 @@ stdenv.mkDerivation {
   buildInputs = [];
 
   buildPhase = ''
-    $CC -o buildinfo buildinfo.c $NIX_CFLAGS_COMPILE
-    echo "$CC -o buildinfo buildinfo.c $NIX_CFLAGS_COMPILE" >buildinfo.log
+    $CC -o buildinfo buildinfo.c
+
+    echo "CC=$(readlink -f $(command -v $CC))" >>buildinfo.log
+    echo "NIX_CFLAGS_COMPILE=$NIX_CFLAGS_COMPILE" >>buildinfo.log
+    echo "NIX_CFLAGS_LINK=$NIX_CFLAGS_LINK" >>buildinfo.log
+    echo "NIX_LDFLAGS=$NIX_LDFLAGS" >>buildinfo.log
+    echo "CFLAGS_COMPILE=$CFLAGS_COMPILE" >>buildinfo.log
+    echo "CFLAGS=$CFLAGS" >>buildinfo.log
+    echo "LDFLAGS=$LDFLAGS" >>buildinfo.log
+
     ./buildinfo >buildinfo.json
   '';
   
