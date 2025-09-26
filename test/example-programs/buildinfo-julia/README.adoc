@@ -1,0 +1,3 @@
+== Julia buildinfo example
+
+This example builds and runs a small Julia script that prints information about the runtime, target architecture, and CPU features in JSON format. The test-suite consumes the JSON from $out/lib/buildinfo.json.
