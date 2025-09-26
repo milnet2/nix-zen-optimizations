@@ -37,7 +37,7 @@ The implementation covers the following languages:
 | Python 3  | Interpreter compiled with optimizations   | ❌ #Compile error#, tests disabled
 | Fortran   | |
 | Haskell   | | #Compile error#, #not idiomatic nix#
-| Julia     | |
+| Julia     |                                           | ❌ #Compile error#, tests disabled
 | R         | | #Compile error#, need to update test-assertions
 | Zig       | | #Compile error#, #test is bullshit#
 |===
