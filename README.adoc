@@ -33,10 +33,10 @@ The implementation covers the following languages:
 | C         | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
 | C++       | Wrapper -script around system `gcc`       | Tests don't pass fully, no LTO
 | Go        | |
-| Rust      | |
-| Python 3  | Interpreter compiled with optimizations   |
+| Rust      | | #Compile error#
+| Python 3  | Interpreter compiled with optimizations   | #Compile error#
 | Fortran   | |
-| Haskell   | |
+| Haskell   | | #Compile error#, #not idiomatic nix#
 | Julia     | |
 | R         | |
 | Zig       | |
