@@ -38,8 +38,8 @@ The implementation covers the following languages:
 | Fortran   | |
 | Haskell   | | #Compile error#, #not idiomatic nix#
 | Julia     | |
-| R         | |
-| Zig       | |
+| R         | | #Compile error#, need to update test-assertions
+| Zig       | | #Compile error#, #test is bullshit#
 |===
 
 === Open work
