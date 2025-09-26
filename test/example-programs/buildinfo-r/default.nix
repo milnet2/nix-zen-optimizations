@@ -1,11 +1,11 @@
-{ stdenv, R }:
+{ stdenv, R, rPackages, ... }:
 
 stdenv.mkDerivation {
   pname = "buildinfo-r";
   version = "1.0.0";
 
   src = ./.;
-  buildInputs = [ R ];
+  buildInputs = [ R rPackages.jsonlite ];
 
   buildPhase = ''
     chmod +x buildinfo.R

@@ -1,82 +1,170 @@
 #!/usr/bin/env Rscript
 # Emit JSON build info for R similar to other language tests
 
-# Read CPU flags from /proc/cpuinfo (Linux)
-read_cpu_flags <- function() {
-  flags <- character()
-  if (file.exists("/proc/cpuinfo")) {
-    lines <- readLines("/proc/cpuinfo", warn = FALSE)
-    # Find the first 'flags' line
-    idx <- grep("^flags\\s*: ", lines)
-    if (length(idx) > 0) {
-      flag_line <- sub("^flags\\s*: ", "", lines[idx[1]])
-      flags <- strsplit(flag_line, " ")[[1]]
-    }
+# R Build & Runtime Introspection -> JSON to stdout
+# Emits JSON with R version, capabilities, external libs, compiler flags,
+# BLAS/LAPACK, and detected optimizations.
+
+#!/usr/bin/env Rscript
+
+suppressWarnings(suppressMessages({
+  have_jsonlite <- requireNamespace("jsonlite", quietly = TRUE)
+}))
+
+to_json <- function(x) {
+  if (have_jsonlite) {
+    jsonlite::toJSON(
+      x,
+      auto_unbox = TRUE,    # don't wrap scalars in arrays
+      pretty = TRUE,        # human-readable formatting
+      null = "null",
+      na = "null"
+    )
+  } else {
+    stop("Package 'jsonlite' is required for JSON output.")
   }
-  unique(flags)
 }
 
-has_flag <- function(flags, name) {
-  name %in% flags
+pick_makeconf <- function(lines, key) {
+  i <- grep(paste0("^", key, "\\s*="), lines)
+  if (length(i)) sub("^[^=]+=\\s*", "", lines[i[1]]) else NA_character_
 }
 
-flags <- read_cpu_flags()
+detect_cpu_flags <- function(flags) {
+  m <- regmatches(flags, gregexpr("\\-march=[^\\s]+|\\-mcpu=[^\\s]+|\\-mtune=[^\\s]+", flags))[[1]]
+  if (length(m)) unique(m) else character()
+}
 
-# Feature mapping from /proc/cpuinfo names
-sse       <- has_flag(flags, "sse")
-sse2      <- has_flag(flags, "sse2")
-sse3      <- has_flag(flags, "sse3")
-ssse3     <- has_flag(flags, "ssse3")
-sse4_1    <- has_flag(flags, "sse4_1")
-sse4_2    <- has_flag(flags, "sse4_2")
-avx       <- has_flag(flags, "avx")
-avx2      <- has_flag(flags, "avx2")
-# AVX-512 flags
-avx512f   <- has_flag(flags, "avx512f")
-avx512cd  <- has_flag(flags, "avx512cd")
-avx512er  <- has_flag(flags, "avx512er")
-avx512pf  <- has_flag(flags, "avx512pf")
-avx512bw  <- has_flag(flags, "avx512bw")
-avx512dq  <- has_flag(flags, "avx512dq")
-avx512vl  <- has_flag(flags, "avx512vl")
-avx512ifma<- has_flag(flags, "avx512ifma")
-avx512vbmi<- has_flag(flags, "avx512vbmi")
-avx512vnni<- has_flag(flags, "avx512vnni")
+read_makeconf <- function() {
+  path <- file.path(R.home("etc"), "Makeconf")
+  if (!file.exists(path)) return(list(path = NA_character_, present = FALSE))
+  lines <- readLines(path, warn = FALSE)
+  all_flags <- paste(na.omit(c(
+    pick_makeconf(lines, "CFLAGS"),
+    pick_makeconf(lines, "CXXFLAGS"),
+    pick_makeconf(lines, "FFLAGS"),
+    pick_makeconf(lines, "LDFLAGS"),
+    pick_makeconf(lines, "SHLIB_LDFLAGS"),
+    pick_makeconf(lines, "CPPFLAGS")
+  )), collapse = " ")
+  list(
+    path = path,
+    present = TRUE,
+    CC = pick_makeconf(lines, "CC"),
+    CFLAGS = pick_makeconf(lines, "CFLAGS"),
+    CXX = pick_makeconf(lines, "CXX"),
+    CXXFLAGS = pick_makeconf(lines, "CXXFLAGS"),
+    FC = pick_makeconf(lines, "FC"),
+    FFLAGS = pick_makeconf(lines, "FFLAGS"),
+    LDFLAGS = pick_makeconf(lines, "LDFLAGS"),
+    SHLIB_LDFLAGS = pick_makeconf(lines, "SHLIB_LDFLAGS"),
+    CPPFLAGS = pick_makeconf(lines, "CPPFLAGS"),
+    DETECTED = list(
+      LTO = any(grepl("\\-flto(\\b|=)", all_flags)),
+      CPUFlags = unname(detect_cpu_flags(all_flags)),
+      OpenMP = isTRUE(unname(capabilities("openmp")))
+    )
+  )
+}
 
-arch <- R.version$arch # e.g., x86_64
-# R.version$arch may be like "x86_64"; ensure consistent
-arch <- sub("-.*$", "", arch)
-version_string <- paste0(R.version$major, ".", R.version$minor)
+rcmd_config <- function(keys) {
+  out <- setNames(vector("list", length(keys)), keys)
+  for (k in keys) {
+    val <- tryCatch(system(paste("R CMD config", shQuote(k)), intern = TRUE),
+                    error = function(e) NA_character_)
+    if (length(val) == 0) val <- NA_character_
+    out[[k]] <- paste(val, collapse = " ")
+  }
+  out
+}
 
-# Helper to convert booleans to JSON true/false strings
-booljson <- function(x) if (isTRUE(x)) "true" else "false"
+safe_capabilities <- function() {
+  as.list(capabilities())
+}
 
-json <- paste0(
-  "{",
-  "\"target\":{\"arch\":\"", arch, "\"}",
-  ",\"compiler\":{",
-    "\"version_string\":\"", version_string, "\"",
-    ",\"fast_math\":true",
-    ",\"sse\":", booljson(sse),
-    ",\"sse2\":", booljson(sse2),
-    ",\"sse3\":", booljson(sse3),
-    ",\"ssse3\":", booljson(ssse3),
-    ",\"sse4_1\":", booljson(sse4_1),
-    ",\"sse4_2\":", booljson(sse4_2),
-    ",\"avx\":", booljson(avx),
-    ",\"avx2\":", booljson(avx2),
-    ",\"avx512f\":", booljson(avx512f),
-    ",\"avx512cd\":", booljson(avx512cd),
-    ",\"avx512er\":", booljson(avx512er),
-    ",\"avx512pf\":", booljson(avx512pf),
-    ",\"avx512bw\":", booljson(avx512bw),
-    ",\"avx512dq\":", booljson(avx512dq),
-    ",\"avx512vl\":", booljson(avx512vl),
-    ",\"avx512ifma\":", booljson(avx512ifma),
-    ",\"avx512vbmi\":", booljson(avx512vbmi),
-    ",\"avx512vnni\":", booljson(avx512vnni),
-  "}",
-  "}"
+safe_extsoft <- function() {
+  get_extsoft_fun <- function() {
+    for (ns in c("grDevices", "utils", "base")) {
+      nsobj <- tryCatch(asNamespace(ns), error = function(e) NULL)
+      if (!is.null(nsobj) && exists("extSoftVersion", envir = nsobj, inherits = FALSE)) {
+        return(get("extSoftVersion", envir = nsobj))
+      }
+    }
+    ga <- suppressWarnings(getAnywhere("extSoftVersion"))
+    if (!is.null(ga) && length(ga$objs) > 0) return(ga$objs[[1]])
+    NULL
+  }
+  f <- get_extsoft_fun()
+  if (is.null(f)) return(list(note = "extSoftVersion() not found"))
+  ex <- tryCatch(f(), error = function(e) NULL)
+  if (is.null(ex)) return(list(note = "extSoftVersion() call failed"))
+  as.list(ex)
+}
+
+blas_lapack_info <- function() {
+  env <- Sys.getenv(c(
+    "R_BLAS", "R_LAPACK",
+    "MKL_ROOT", "MKL_INTERFACE_LAYER", "MKL_THREADING_LAYER", "MKL_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS", "BLIS_NUM_THREADS", "OMP_NUM_THREADS"
+  ), unset = NA_character_)
+  si <- utils::sessionInfo()
+  list(
+    env = as.list(env),
+    session = list(
+      BLAS = tryCatch(unname(si$BLAS), error = function(e) NA_character_),
+      LAPACK = tryCatch(unname(si$LAPACK), error = function(e) NA_character_)
+    )
+  )
+}
+
+compact_session_info <- function() {
+  si <- utils::sessionInfo()
+  attached <- character(0)
+  if (!is.null(si$otherPkgs) && length(si$otherPkgs)) {
+    attached <- vapply(si$otherPkgs,
+                       function(p) paste0(p$Package, "@", p$Version),
+                       character(1))
+  }
+  list(
+    R = list(
+      version = si$R.version$version.string,
+      nickname = si$R.version$nickname,
+      platform = si$R.version$platform
+    ),
+    running = si$running,
+    matrixProducts = si$matrixProducts,
+    locale = si$locale,
+    basePkgs = si$basePkgs,        # <- leave as character vector
+    loadedOnly = names(si$loadedOnly),
+    attached = attached
+  )
+}
+
+keys <- c("CC","CFLAGS","CXX","CXXFLAGS","FC","FFLAGS","LDFLAGS",
+          "CPPFLAGS","SAFE_FFLAGS","SAFE_CFLAGS","SAFE_CXXFLAGS","SHLIB_LDFLAGS")
+
+result <- list(
+  timestamp = as.character(Sys.time()),
+  platform = list(
+    platform = R.version$platform,
+    arch = R.version$arch,
+    os = R.version$os,
+    system = R.version$system,
+    ui = .Platform$GUI,
+    endian = .Platform$endian
+  ),
+  R = list(
+    version = R.version$version.string,
+    major = R.version$major,
+    minor = R.version$minor,
+    home = R.home(),
+    session = compact_session_info()
+  ),
+  capabilities = safe_capabilities(),
+  external_libraries = safe_extsoft(),
+  blas_lapack = blas_lapack_info(),
+  makeconf = read_makeconf(),
+  r_cmd_config = rcmd_config(keys)
 )
 
-cat(json, "\n")
+cat(to_json(result))
