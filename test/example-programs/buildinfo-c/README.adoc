@@ -1,0 +1,22 @@
+== Buildinfo Program
+
+This is a simple C program that prints build information in JSON format to stdout.
+It's useful for assessing if Nix picked up compiler optimizations.
+
+=== Building with Nix
+
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----

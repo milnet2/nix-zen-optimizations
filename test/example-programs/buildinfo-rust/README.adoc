@@ -1,0 +1,25 @@
+= Rust Build Information Program
+
+This program prints information about the Rust compiler, build environment, and target architecture in JSON format.
+
+== Purpose
+
+The primary purpose of this program is to verify that compiler optimizations are working correctly, especially SIMD instruction sets like AVX and SSE.
+
+== Building with Nix
+
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----
