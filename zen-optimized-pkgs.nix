@@ -7,7 +7,7 @@
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with (import importablePkgsDelegate {}); {
-        inherit gnum4;}
+        inherit gnum4 bash bison gettext texinfo; } # TODO: Does this have an effect?
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -198,8 +198,11 @@ let
 in import importablePkgsDelegate rec {
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
+    inherit noOptimizePkgs;
 
     overlays = [
+       (final: prev: noOptimizePkgs)
+
        fortranOverlay
        goOverlay
        haskellOverlay
@@ -210,7 +213,6 @@ in import importablePkgsDelegate rec {
        zigOverlay
 
        openBlasOverlay
-       (final: prev: noOptimizePkgs)
     ];
 
     config.replaceStdenv = { pkgs, ...}:
