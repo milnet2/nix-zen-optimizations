@@ -196,18 +196,27 @@ in import importablePkgsDelegate rec {
     localSystem = optimizedPlatform;
 
     config.replaceStdenv = { pkgs, ...}:
+        let
+          targetCC = pkgs.gcc_latest;
+          gccO = "-O3";
+        in
         assert pkgs.stdenv.isLinux; #  pkgs.llvmPackages_latest.stdenv
         # See: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/build-support/cc-wrapper/default.nix
         pkgs.overrideCC pkgs.stdenv (pkgs.wrapCCWith {
-           cc = pkgs.gcc_latest.cc;
+           cc = targetCC.cc;
+           bintools  = targetCC.bintools;
+           libc = targetCC.libc;
+
            nativeTools = false;
-           nativeLibc = false; # TODO libc = "glibc"; # - name or package?
-           # TODO: Setting Linker -Wl,--icf=all breaks builds!
+           nativeLibc = false;
+
            extraBuildCommands = ''
-               echo "export NIX_CFLAGS_COMPILE+=' -O3 -pipe -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}'" >> $out/nix-support/setup-hook
-               # echo "export NIX_CFLAGS_COMPILE+=' -flto=${ltoLevel}'" >> $out/nix-support/setup-hook
-               # echo "export NIX_CFLAGS_LINK+=' -flto=${ltoLevel}'" >> $out/nix-support/setup-hook
-               # echo "export NIX_LDFLAGS+=' -Wl,-O3 -Wl,--as-needed -Wl,--gc-sections'" >> $out/nix-support/setup-hook
+               echo "export NIX_CFLAGS_COMPILE+=' ${gccO} -pipe -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}'" >> $out/nix-support/setup-hook
+
+               echo "export NIX_CFLAGS_COMPILE+=' -flto=auto -fipa-icf'" >> $out/nix-support/setup-hook
+               echo "export NIX_CFLAGS_LINK+=' -flto=auto'" >> $out/nix-support/setup-hook
+
+               echo "export NIX_LDFLAGS+=' --as-needed --gc-sections'" >> $out/nix-support/setup-hook
                echo "export NIX_CPPFLAGS_COMPILE+=' -DNDEBUG'" >> $out/nix-support/setup-hook
                echo "export NIX_HARDENING_DISABLE+=' fortify'" >> $out/nix-support/setup-hook
            '';
