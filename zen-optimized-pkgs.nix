@@ -8,8 +8,9 @@
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; {
         inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
-            ncurses
+            ncurses glibc-locales diffutils findutils
             autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
+            gawk
             # Hardly CPU-bund so we'll also skip
             sqlite gdbm
             ; }
