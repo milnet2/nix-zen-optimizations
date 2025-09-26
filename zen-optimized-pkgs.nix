@@ -7,7 +7,11 @@
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     noOptimizePkgs ? with unoptimizedPkgs; {
         inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
-            ncurses; }
+            ncurses
+            autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
+            # Hardly CPU-bund so we'll also skip
+            sqlite gdbm
+            ; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
