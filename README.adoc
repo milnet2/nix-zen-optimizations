@@ -50,8 +50,8 @@ The implementation covers the following languages:
 
 === Run tests
 
-Tests compile simple programs in the individual languages and inspect their output.
-To execute all the tests run
+Tests compile simple programs (xref:test/example-programs/README.adoc[]) in the individual languages and inspect their output.
+To execute all the tests run:
 
 [source,shell]
 ----

@@ -1,0 +1,28 @@
+== Example programs for verifying optimizations
+
+In the subfolders there are example programs written in various languages.
+
+=== Programs "_buildinfo-*_"
+
+The programs "_buildinfo-*_" try to access compiler information and optimizations at runtime of the specific program.
+They output Json to stdout which is later interpreted by tests.
+
+The programs are also used by the test-suite in the root-folder.
+
+To execute them *unoptimized* on your system you can run:
+
+[source,shell]
+----
+cd buildinfo-* # TODO: Pick your language
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----
+
+You can compare the output to their individual outputs *with optimizations* as generated through:
+
+[source,shell]
+----
+cd buildinfo-* # TODO: Pick your language
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
+./result/bin/buildinfo
+----
