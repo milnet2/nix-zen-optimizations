@@ -204,7 +204,7 @@ in import importablePkgsDelegate rec {
            nativeLibc = false; # TODO libc = "glibc"; # - name or package?
            # TODO: Setting Linker -Wl,--icf=all breaks builds!
            extraBuildCommands = ''
-               echo "export NIX_CFLAGS_COMPILE+=' -O3 -pipe -fomit-frame-pointer -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}'" >> $out/nix-support/setup-hook
+               echo "export NIX_CFLAGS_COMPILE+=' -O3 -pipe -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}'" >> $out/nix-support/setup-hook
                # echo "export NIX_CFLAGS_COMPILE+=' -flto=${ltoLevel}'" >> $out/nix-support/setup-hook
                # echo "export NIX_CFLAGS_LINK+=' -flto=${ltoLevel}'" >> $out/nix-support/setup-hook
                # echo "export NIX_LDFLAGS+=' -Wl,-O3 -Wl,--as-needed -Wl,--gc-sections'" >> $out/nix-support/setup-hook
