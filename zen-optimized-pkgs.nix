@@ -7,7 +7,8 @@
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; {
-        inherit gnum4 bash bison gettext texinfo; } # TODO: Does this have an effect?
+        inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
+            ncurses binutils; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -109,8 +110,20 @@ let
     });
 
     pythonOverlay = (final: prev: {
-        python3 = (prev.python3.override { })
-              .override {
+        # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
+        python3 = (prev.python3.override {
+
+         }).override {
+            enableLTO = true;
+            enableOptimizations = true; # Makes build non-reproducible!!
+            reproducibleBuild = false; # only disables tests
+
+            readline = unoptimizedPkgs.readline;
+            tzdata = unoptimizedPkgs.tzdata;
+            mailcap = unoptimizedPkgs.mailcap;
+            bluez-headers = unoptimizedPkgs.bluez-headers;
+            bashNonInteractive = unoptimizedPkgs.bashNonInteractive;
+
                 packageOverrides = pyFinal: pyPrev: {
                   numpy = pyPrev.numpy.override {
                     blas = final.blas;
