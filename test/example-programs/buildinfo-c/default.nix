@@ -8,10 +8,11 @@ stdenv.mkDerivation {
   buildInputs = [];
 
   buildPhase = ''
-    set -euo pipefail
+    set -eo pipefail
 
     echo "$CC -o buildinfo buildinfo.c"
     $CC -o buildinfo buildinfo.c
+    echo "Build complete"
 
     echo "CC=$(readlink -f $(command -v $CC))" >>buildinfo.log
     echo "NIX_CFLAGS_COMPILE=$NIX_CFLAGS_COMPILE" >>buildinfo.log
