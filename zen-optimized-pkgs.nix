@@ -12,7 +12,7 @@
             autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
             gawk expat
             # Hardly CPU-bund so we'll also skip
-            sqlite
+            sqlite gdbm
             ; }
 }:
 let
@@ -116,17 +116,20 @@ let
 
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
-        python3 = prev.python3.override {
+#        python3 = prev.callPackage prev.python3 {
+        python3 = prev.python3Minimal.override {
             enableLTO = true;
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
             gdbm = null; withGdbm = false;
-            readline = unoptimizedPkgs.readline;
+            readline = unoptimizedPkgs.readline; withReadline = false;
             tzdata = unoptimizedPkgs.tzdata;
             mailcap = unoptimizedPkgs.mailcap;
-            # bluez-headers = unoptimizedPkgs.bluez-headers;
+            bluezSupport = false; # bluez-headers = unoptimizedPkgs.bluez-headers;
             bashNonInteractive = unoptimizedPkgs.bashNonInteractive;
+
+            testers = [];
 
                 packageOverrides = pyFinal: pyPrev: {
                   numpy = pyPrev.numpy.override {
@@ -215,6 +218,7 @@ let
 in import importablePkgsDelegate rec {
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
+
     inherit noOptimizePkgs;
 
     overlays = [
