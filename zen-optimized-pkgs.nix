@@ -12,7 +12,7 @@
             autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
             gawk expat
             # Hardly CPU-bund so we'll also skip
-            sqlite gdbm
+            sqlite
             ; }
 }:
 let
@@ -121,7 +121,7 @@ let
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
-            gdbm = unoptimizedPkgs.gdbm;
+            gdbm = null; withGdbm = false;
             readline = unoptimizedPkgs.readline;
             tzdata = unoptimizedPkgs.tzdata;
             mailcap = unoptimizedPkgs.mailcap;
