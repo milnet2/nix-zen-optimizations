@@ -10,7 +10,7 @@
         inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
             ncurses glibc-locales diffutils findutils
             autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
-            gawk
+            gawk expat
             # Hardly CPU-bund so we'll also skip
             sqlite gdbm
             ; }
@@ -116,17 +116,16 @@ let
 
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
-        python3 = (prev.python3.override {
-
-         }).override {
+        python3 = prev.python3.override {
             enableLTO = true;
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
+            gdbm = unoptimizedPkgs.gdbm;
             readline = unoptimizedPkgs.readline;
             tzdata = unoptimizedPkgs.tzdata;
             mailcap = unoptimizedPkgs.mailcap;
-            bluez-headers = unoptimizedPkgs.bluez-headers;
+            # bluez-headers = unoptimizedPkgs.bluez-headers;
             bashNonInteractive = unoptimizedPkgs.bashNonInteractive;
 
                 packageOverrides = pyFinal: pyPrev: {
@@ -219,7 +218,7 @@ in import importablePkgsDelegate rec {
     inherit noOptimizePkgs;
 
     overlays = [
-       (final: prev: noOptimizePkgs)
+       # (final: prev: noOptimizePkgs)
 
        fortranOverlay
        goOverlay

@@ -82,3 +82,8 @@ nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/exampl
 ----
 nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-fortran/default.nix {}'
 ----
+
+[source,bash]
+----
+nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-python/default.nix {}'
+----
