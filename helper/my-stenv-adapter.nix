@@ -45,7 +45,8 @@ in rec {
         extraHardeningDisable ? [], # Appended to NIX_HARDENING_DISABLE
     }:
         #pkgs.stdenvAdapters.impureUseNativeOptimizations # TODO??
-        pkgs.stdenvAdapters.withCFlags extraCFlagsCompile
+        pkgs.stdenvAdapters.withCFlags (extraCFlagsCompile ++ builtins.map (ldFlag: "-Wl,${ldFlag}") extraLdFlags)
+        # See: https://blog.mayflower.de/5800-Hardening-Compiler-Flags-for-NixOS.html
         (pkgs.stdenvAdapters.withDefaultHardeningFlags []
 #        (pkgs.stdenvAdapters.addAttrsToDerivation { # TODO: How to set these?
 #            NIX_CFLAGS_LINK = toString extraCFlagsLink;
