@@ -4,6 +4,7 @@
     lib ? (import importablePkgsDelegate {}).lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin",
+    optimizationParameter ? "-O3"
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -195,36 +196,6 @@ in import importablePkgsDelegate rec {
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
 
-    config.replaceStdenv = { pkgs, ...}:
-        pkgs.gcc15Stdenv;
-#        pkgs.gcc_latest.stdenv;
-
-#        let
-#          targetCC = pkgs.gcc_latest;
-#          gccO = "-O3";
-#        in
-#        assert pkgs.stdenv.isLinux; #  pkgs.llvmPackages_latest.stdenv
-#        # See: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/build-support/cc-wrapper/default.nix
-#        pkgs.overrideCC pkgs.stdenv (pkgs.wrapCCWith {
-#           cc = targetCC.cc;
-#           bintools  = targetCC.bintools;
-#           libc = targetCC.libc;
-#
-#           nativeTools = false;
-#           nativeLibc = false;
-#
-#           extraBuildCommands = ''
-#               echo "export NIX_CFLAGS_COMPILE+=' ${gccO} -pipe -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}'" >> $out/nix-support/setup-hook
-#
-#               echo "export NIX_CFLAGS_COMPILE+=' -flto=auto -fipa-icf'" >> $out/nix-support/setup-hook
-#               echo "export NIX_CFLAGS_LINK+=' -flto=auto'" >> $out/nix-support/setup-hook
-#
-#               echo "export NIX_LDFLAGS+=' --as-needed --gc-sections'" >> $out/nix-support/setup-hook
-#               echo "export NIX_CPPFLAGS_COMPILE+=' -DNDEBUG'" >> $out/nix-support/setup-hook
-#               echo "export NIX_HARDENING_DISABLE+=' fortify'" >> $out/nix-support/setup-hook
-#           '';
-#       });
-
     overlays = [
        fortranOverlay
        goOverlay
@@ -237,4 +208,23 @@ in import importablePkgsDelegate rec {
 
        openBlasOverlay
     ];
+
+    config.replaceStdenv = { pkgs, ...}:
+        let
+            baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+            stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
+        in
+            stenvAdapter.wrapStenv {
+                inherit baseStdenv;
+                extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
+                    "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
+                    "-flto=auto" "-fipa-icf" ];
+                extraCFlagsLink = [ "-flto=auto" ];
+                extraCPPFlagsCompile = [ "-DNDEBUG" ];
+                extraLdFlags = [ "--as-needed" "--gc-sections" ];
+                extraHardeningDisable = [ "fortify" ];
+
+                # pkgs.stdenvAdapters.impureUseNativeOptimizations # TODO: Do we want that?
+                # TODO: Do we want to also change `libc`?
+            };
 }
