@@ -44,14 +44,17 @@ in rec {
 
         extraHardeningDisable ? [], # Appended to NIX_HARDENING_DISABLE
     }:
-        pkgs.stdenvAdapters.addAttrsToDerivation {
-            env.NIX_CFLAGS_COMPILE = toString extraCFlagsCompile;
-            env.NIX_CFLAGS_LINK = toString extraCFlagsLink;
-            env.NIX_CPPFLAGS_COMPILE = toString extraCPPFlagsCompile;
-            env.NIX_LDFLAGS = toString extraLdFlags;
-
-            env.NIX_HARDENING_DISABLE = toString extraHardeningDisable;
-        } baseStdenv;
+        #pkgs.stdenvAdapters.impureUseNativeOptimizations # TODO??
+        pkgs.stdenvAdapters.withCFlags extraCFlagsCompile
+        (pkgs.stdenvAdapters.withDefaultHardeningFlags []
+#        (pkgs.stdenvAdapters.addAttrsToDerivation { # TODO: How to set these?
+#            NIX_CFLAGS_LINK = toString extraCFlagsLink;
+#            NIX_CPPFLAGS_COMPILE = toString extraCPPFlagsCompile;
+#            NIX_LDFLAGS = toString extraLdFlags;
+#
+#            NIX_HARDENING_DISABLE = toString extraHardeningDisable;
+#        }
+        baseStdenv);
 
 #        baseStdenv.override (old: {
 #            mkDerivationFromStdenv = extendMkDerivationArgs old (args: { env = (args.env or { }) // {
@@ -63,15 +66,4 @@ in rec {
 #                NIX_HARDENING_DISABLE = toString (args.env.NIX_HARDENING_DISABLE or "") + " ${toString extraHardeningDisable}";
 #            };});});
 
-
-
-#    # For adding to `nixpkgs.overlays`
-#    makeOverlay = {
-#        extraCFlagsLink ? [], # Appended to env NIX_CFLAGS_LINK
-#    }: (self: super: {
-#        stdenv = wrapStenv {
-#            baseStdenv = super.stdenv;
-#            inherit extraCFlagsLink;
-#        };
-#    });
 }

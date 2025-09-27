@@ -50,6 +50,7 @@ The implementation covers the following languages:
 
 * Properly use `lto`
 * Use the _ROCM_ packages
+** See also: https://github.com/NixOS/nixpkgs/blob/60a2d618f68142e2e697a7cec22c33212751d73a/pkgs/development/rocm-modules/6/llvm/default.nix#L182
 * OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
 * Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs): +
 The AMD fork of the BLIS library, with attribute amd-blis, extends BLIS with optimizations for modern AMD CPUs. The changes are usually submitted to the upstream BLIS project after some time. However, AMD BLIS typically provides some performance improvements on AMD Zen CPUs. The complementary AMD LIBFLAME library, with attribute amd-libflame, provides a LAPACK implementation.
@@ -70,4 +71,9 @@ nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pk
 ----
 nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-c/default.nix {}'
 ./result/bin/buildinfo
+----
+
+[source,bash]
+----
+nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-fortran/default.nix {}'
 ----
