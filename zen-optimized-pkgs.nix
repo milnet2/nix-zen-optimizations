@@ -211,7 +211,7 @@ in import importablePkgsDelegate rec {
 
     config.replaceStdenv = { pkgs, ...}:
         let
-            baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+            baseStdenv = pkgs.gcc14Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
             stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
         in
             stenvAdapter.wrapStenv {
