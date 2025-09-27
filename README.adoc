@@ -64,4 +64,10 @@ To execute all the tests run:
 nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
 ----
 
+==== Simple execute C-Compiler
 
+[source,bash]
+----
+nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-c/default.nix {}'
+./result/bin/buildinfo
+----

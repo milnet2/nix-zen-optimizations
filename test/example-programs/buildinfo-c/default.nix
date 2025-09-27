@@ -8,6 +8,9 @@ stdenv.mkDerivation {
   buildInputs = [];
 
   buildPhase = ''
+    set -euo pipefail
+
+    echo "$CC -o buildinfo buildinfo.c"
     $CC -o buildinfo buildinfo.c
 
     echo "CC=$(readlink -f $(command -v $CC))" >>buildinfo.log
