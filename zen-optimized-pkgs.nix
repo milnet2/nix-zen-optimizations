@@ -7,9 +7,10 @@
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; {
-        inherit gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
+        inherit
+            gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
             ncurses glibc-locales diffutils findutils
-            autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
+            #autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
             gawk expat
             # Hardly CPU-bund so we'll also skip
             sqlite gdbm
@@ -217,12 +218,11 @@ let
 
 in import importablePkgsDelegate rec {
     config.allowUnfree = true;
-    localSystem = optimizedPlatform;
 
     inherit noOptimizePkgs;
 
     overlays = [
-       # (final: prev: noOptimizePkgs)
+#       (final: prev: noOptimizePkgs)
 
        fortranOverlay
        goOverlay
