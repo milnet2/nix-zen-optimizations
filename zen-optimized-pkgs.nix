@@ -220,12 +220,11 @@ in import importablePkgsDelegate rec {
                 extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
                     "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
                     "-flto=auto" "-fipa-icf" ];
-                extraCFlagsLink = [ "-flto=auto" ];
-                extraCPPFlagsCompile = [ "-DNDEBUG" ];
+                extraCFlagsLink = [ "-flto=auto" ]; # TODO: Parameter mot yet picked up properly
+                extraCPPFlagsCompile = [ "-DNDEBUG" ]; # TODO: Parameter mot yet picked up properly
                 extraLdFlags = [ "--as-needed" "--gc-sections" ];
-                extraHardeningDisable = [ "fortify" ];
+                extraHardeningDisable = [ "fortify" ]; # TODO: Parameter mot yet picked up properly
 
-                # pkgs.stdenvAdapters.impureUseNativeOptimizations # TODO: Do we want that?
                 # TODO: Do we want to also change `libc`?
             };
 }
