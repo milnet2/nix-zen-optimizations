@@ -5,7 +5,22 @@
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
-    optimizationParameter ? "-O3"
+    optimizationParameter ? "-O3",
+    basePythonPackage ? pkgs: pkgs.python3Minimal,
+    noOptimizePkgs ? with unoptimizedPkgs; { inherit
+        # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
+        # The build will fail. ... At the very end :(
+        # bash bashNonInteractive
+
+        perl # TODO: Perl still seems to be built anyways
+        glibc-locales tzdata mailcap bluez-headers
+
+#            ncurses  diffutils findutils
+            #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
+#            gawk
+        expat readline
+        gnum4 pkg-config bison gettext texinfo
+        ; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
@@ -107,8 +122,21 @@ let
     });
 
     pythonOverlay = (final: prev: {
-        python3 = (prev.python3.override { })
-              .override {
+        # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
+        python3 = (basePythonPackage prev).override {
+            enableLTO = true;
+            enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
+            reproducibleBuild = false; # only disables tests
+
+            gdbm = null; withGdbm = false;
+            readline = unoptimizedPkgs.readline; withReadline = false;
+            tzdata = unoptimizedPkgs.tzdata;
+            mailcap = unoptimizedPkgs.mailcap;
+            bluezSupport = false; # bluez-headers = unoptimizedPkgs.bluez-headers;
+            bashNonInteractive = unoptimizedPkgs.bashNonInteractive;
+
+            testers = [];
+
                 packageOverrides = pyFinal: pyPrev: {
                   numpy = pyPrev.numpy.override {
                     blas = final.blas;
@@ -197,7 +225,11 @@ in import importablePkgsDelegate rec {
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
 
+    inherit noOptimizePkgs;
+
     overlays = [
+       (final: prev: noOptimizePkgs)
+
        fortranOverlay
        goOverlay
        haskellOverlay

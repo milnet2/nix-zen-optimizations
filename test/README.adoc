@@ -1,0 +1,11 @@
+== Optimization tests
+
+These tests are also picked up in the test-suites a level up
+
+=== Run individually
+
+Python::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-python.test.nix
+----

@@ -107,7 +107,7 @@ def main():
     """Main function to generate and print the JSON output."""
     info = {
         "compiler": get_compiler_info(),
-        "build": get_build_info(),
+        # "build": get_build_info(),
         "target": get_target_info(),
         "libc": get_libc_info(),
     }
