@@ -8,16 +8,15 @@
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
-        # The build will fail.
+        # The build will fail. ... At the very end :(
 
-#             bash bashNonInteractive bison readline tzdata mailcap bluez-headers
+#             bash bashNonInteractive
+            tzdata mailcap bluez-headers
 #            ncurses glibc-locales diffutils findutils
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
-#            gawk
-            expat
-            gnum4 pkg-config gettext texinfo
-            # Hardly CPU-bund so we'll also skip
-#            sqlite gdbm
+#            gawk perl
+            expat readline
+            gnum4 pkg-config bison gettext texinfo
             ; }
 }:
 let
