@@ -30,24 +30,27 @@ CAUTION:: I'm no expert in this so the approaches may be unorthodox or not work 
 
 The implementation covers the following languages:
 
-[cols="1,3,1"]
+[cols="1,3,2"]
 |===
 |Language |Mechanism |Status
 
-| C         | Wrapper -script around system `gcc`       a|
+| C                     | Wrapper -script around system `gcc`       a|
 * [yellow]#⚠# Not all optimizations applied properly
 * ✅ tests pass - #double check#
-| C++       | Wrapper -script around system `gcc`       a|
+| C++                   | Wrapper -script around system `gcc`       a|
 * [yellow]#⚠# Not all optimizations applied properly
 * ✅ tests pass - #double check#
-| Go        |                                           | ❌ #Compile error#, tests disabled
-| Rust      |                                           | ❌ #Compile error#, tests disabled
-| Python 3  | Interpreter compiled with optimizations   | ❌ #Compile error#, tests disabled
-| Fortran   | Wrapper -script around system `gfortran`  | ✅ tests pass
-| Haskell   |                                           | ❌ #Compile error#, #not idiomatic nix#
-| Julia     |                                           | ❌ #Compile error#, tests disabled
-| R         |                                           | ❌ #Compile error#, need to update test-assertions
-| Zig       |                                           | ❌ #Compile error#, #test is bullshit#
+| Go                    |                                           | ❌ #Compile error#, tests disabled
+| Rust                  |                                           | ❌ #Compile error#, tests disabled
+| Python 3 (minimal)    | Interpreter compiled with optimizations   a|
+* [yellow]#⚠# Should prefer local build because of optimizations
+* ✅ tests pass
+* [yellow]#⚠# Tests should be more specific on optimizations
+| Fortran               | Wrapper -script around system `gfortran`  | ✅ tests pass
+| Haskell               |                                           | ❌ #Compile error#, #not idiomatic nix#
+| Julia                 |                                           | ❌ #Compile error#, tests disabled
+| R                     |                                           | ❌ #Compile error#, need to update test-assertions
+| Zig                   |                                           | ❌ #Compile error#, #test is bullshit#
 |===
 
 === Open work
