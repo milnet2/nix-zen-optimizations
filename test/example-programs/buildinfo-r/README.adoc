@@ -1,0 +1,19 @@
+== Buildinfo R Program
+
+This is a simple R program that prints interpreter and system information in JSON format to stdout.
+
+=== Building with Nix
+
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
+----
