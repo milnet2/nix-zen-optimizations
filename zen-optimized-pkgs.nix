@@ -10,15 +10,17 @@
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
+        # bash bashNonInteractive
 
-#             bash bashNonInteractive
-            tzdata mailcap bluez-headers
-#            ncurses glibc-locales diffutils findutils
+        perl # TODO: Perl still seems to be built anyways
+        glibc-locales tzdata mailcap bluez-headers
+
+#            ncurses  diffutils findutils
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
-#            gawk perl
-            expat readline
-            gnum4 pkg-config bison gettext texinfo
-            ; }
+#            gawk
+        expat readline
+        gnum4 pkg-config bison gettext texinfo
+        ; }
 }:
 let
     # https://nixos.org/manual/nixpkgs/stable/#chap-cross
