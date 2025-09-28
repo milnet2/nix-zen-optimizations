@@ -1,9 +1,10 @@
 # Provides a `pkgs` for optimized code
 {
-    importablePkgsDelegate ? <nixpkgs>,
-    lib ? (import importablePkgsDelegate {}).lib,
+    importablePkgsDelegate ? <nixpkgs>, # The optimized packages will be based on this
+    unoptimizedPkgs ? (import importablePkgsDelegate {}), # This is a `pkgs`. If we want a package without optimizations we'll pull it from here
+    lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
-    ltoLevel ? "thin",
+    ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3"
 }:
 let
