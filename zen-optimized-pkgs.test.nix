@@ -453,27 +453,27 @@ in {
 #        };
 #    };
 
-#    "Python environment" = let
-#        buildInfoProgram = pkgsTuned.callPackage ./test/example-programs/buildinfo-python {};
-#        buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json"); # Json was created by executing program
-#    in {
-#        "test target arch is x86_64" = {
-#            expr = buildInfoJson.target.arch;
-#            expected = "x86_64";
-#        };
-#        "test python version" = {
-#            expr = buildInfoJson.compiler.implementation;
-#            expected = "CPython";
-#        };
-#        "test python version format" = {
-#            expr = builtins.match "[0-9]+\\.[0-9]+\\.[0-9]+" buildInfoJson.compiler.version_string != null;
-#            expected = true;
-#        };
-#        "test python has version" = {
-#            expr = buildInfoJson.compiler.py_version > 0;
-#            expected = true;
-#        };
-#    };
+    "Python environment" = let
+        buildInfoProgram = pkgsTuned.callPackage ./test/example-programs/buildinfo-python {};
+        buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json"); # Json was created by executing program
+    in {
+        "test target arch is x86_64" = {
+            expr = buildInfoJson.target.arch;
+            expected = "x86_64";
+        };
+        "test python version" = {
+            expr = buildInfoJson.compiler.implementation;
+            expected = "CPython";
+        };
+        "test python version format" = {
+            expr = builtins.match "[0-9]+\\.[0-9]+\\.[0-9]+" buildInfoJson.compiler.version_string != null;
+            expected = true;
+        };
+        "test python has version" = {
+            expr = buildInfoJson.compiler.py_version > 0;
+            expected = true;
+        };
+    };
 
 #    "Rust environment" = let
 #        buildInfoProgram = pkgsTuned.callPackage ./test/example-programs/buildinfo-rust {};
