@@ -34,8 +34,12 @@ The implementation covers the following languages:
 |===
 |Language |Mechanism |Status
 
-| C         | Wrapper -script around system `gcc`       | ✅ tests pass - #double check#
-| C++       | Wrapper -script around system `gcc`       | ✅ tests pass - #double check#
+| C         | Wrapper -script around system `gcc`       a|
+* [yellow]#⚠# Not all optimizations applied properly
+* ✅ tests pass - #double check#
+| C++       | Wrapper -script around system `gcc`       a|
+* [yellow]#⚠# Not all optimizations applied properly
+* ✅ tests pass - #double check#
 | Go        |                                           | ❌ #Compile error#, tests disabled
 | Rust      |                                           | ❌ #Compile error#, tests disabled
 | Python 3  | Interpreter compiled with optimizations   | ❌ #Compile error#, tests disabled
