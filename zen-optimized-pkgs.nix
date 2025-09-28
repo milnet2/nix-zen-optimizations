@@ -220,6 +220,7 @@ let
 
 in import importablePkgsDelegate rec {
     config.allowUnfree = true;
+    localSystem = optimizedPlatform;
 
     inherit noOptimizePkgs;
 
