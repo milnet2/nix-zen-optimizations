@@ -51,6 +51,8 @@ The implementation covers the following languages:
 * Properly use `lto`
 * Use the _ROCM_ packages
 * OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
+* Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs): +
+The AMD fork of the BLIS library, with attribute amd-blis, extends BLIS with optimizations for modern AMD CPUs. The changes are usually submitted to the upstream BLIS project after some time. However, AMD BLIS typically provides some performance improvements on AMD Zen CPUs. The complementary AMD LIBFLAME library, with attribute amd-libflame, provides a LAPACK implementation.
 
 === Run tests
 
