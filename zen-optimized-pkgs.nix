@@ -6,14 +6,16 @@
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
-    noOptimizePkgs ? with unoptimizedPkgs; {
-        inherit
-#             bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
+    noOptimizePkgs ? with unoptimizedPkgs; { inherit
+        # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
+        # The build will fail.
+
+#             bash bashNonInteractive bison readline tzdata mailcap bluez-headers
 #            ncurses glibc-locales diffutils findutils
-            #autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
+            #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
-            expat gnum4
-            pkg-config gettext texinfo
+            expat
+            gnum4 pkg-config gettext texinfo
             # Hardly CPU-bund so we'll also skip
 #            sqlite gdbm
             ; }
