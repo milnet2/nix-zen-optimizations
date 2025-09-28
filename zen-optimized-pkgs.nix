@@ -8,12 +8,14 @@
     optimizationParameter ? "-O3",
     noOptimizePkgs ? with unoptimizedPkgs; {
         inherit
-            gnum4 bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
-            ncurses glibc-locales diffutils findutils
+#             bash bashNonInteractive bison gettext texinfo readline tzdata mailcap bluez-headers
+#            ncurses glibc-locales diffutils findutils
             #autoconf-archive autoreconfHook nukeReferences pkg-config # TODO: Good idea?
-            gawk expat
+#            gawk
+            expat gnum4
+            pkg-config gettext texinfo
             # Hardly CPU-bund so we'll also skip
-            sqlite gdbm
+#            sqlite gdbm
             ; }
 }:
 let
@@ -222,7 +224,7 @@ in import importablePkgsDelegate rec {
     inherit noOptimizePkgs;
 
     overlays = [
-#       (final: prev: noOptimizePkgs)
+       (final: prev: noOptimizePkgs)
 
        fortranOverlay
        goOverlay
