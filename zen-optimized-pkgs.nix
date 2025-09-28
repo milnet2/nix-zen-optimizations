@@ -6,6 +6,7 @@
     amdZenVersion ? 2, # We have 2 on the mini-pc
     ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
     optimizationParameter ? "-O3",
+    basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
@@ -120,8 +121,7 @@ let
 
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
-#        python3 = prev.callPackage prev.python3 {
-        python3 = prev.python3Minimal.override {
+        python3 = (basePythonPackage prev).override {
             enableLTO = true;
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
