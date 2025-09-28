@@ -215,7 +215,7 @@ in import importablePkgsDelegate rec {
             baseStdenv = pkgs.gcc14Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
             stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
         in
-            stenvAdapter.wrapStenv {
+            stenvAdapter.wrapStdenv {
                 inherit baseStdenv;
                 extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
                     "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
