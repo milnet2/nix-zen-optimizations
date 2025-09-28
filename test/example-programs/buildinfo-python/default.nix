@@ -12,6 +12,7 @@ stdenv.mkDerivation {
     echo "Python: ${python3.interpreter}" >buildinfo.log
     echo "PYTHONPATH: $PYTHONPATH" >>buildinfo.log
     ${python3.interpreter} -vVV >>buildinfo.log
+    ${python3.interpreter} -m timeit "sum(range(1_000_001))" >>buildinfo.log
 
     ${python3.interpreter} buildinfo.py >buildinfo.json
   '';
