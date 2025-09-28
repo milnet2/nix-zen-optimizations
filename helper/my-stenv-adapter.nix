@@ -14,7 +14,7 @@
 
         # TODO: NIX_RUSTFLAGS
 
-        extraHardeningDisable ? [], # Appended to NIX_HARDENING_DISABLE - TODO: Unused - https://blog.mayflower.de/5800-Hardening-Compiler-Flags-for-NixOS.html
+        extraHardeningDisable ? [], # Appended to NIX_HARDENING_DISABLE .. see pkgs.bintools.defaultHardeningFlags - TODO: Unused - https://blog.mayflower.de/5800-Hardening-Compiler-Flags-for-NixOS.html
     }:
         assert lib.assertMsg (! builtins.elem "-march=native" extraCFlagsCompile)
             "Use the parameter `isLocalNativeBuilds = true` instead of using -march=native";

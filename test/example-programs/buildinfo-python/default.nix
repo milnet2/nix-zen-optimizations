@@ -11,6 +11,8 @@ stdenv.mkDerivation {
     chmod +x buildinfo.py
     echo "Python: ${python3.interpreter}" >buildinfo.log
     echo "PYTHONPATH: $PYTHONPATH" >>buildinfo.log
+    ${python3.interpreter} -vVV >>buildinfo.log
+
     ${python3.interpreter} buildinfo.py >buildinfo.json
   '';
   
