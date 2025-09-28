@@ -2,6 +2,10 @@
 
 Contains facilities for installing programs on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
 
+----
+⚠⚠⚠ The repo is currently *mostly broken* ⚠⚠⚠
+----
+
 The intended use of it is through an "alternative" `pkgs` from the system like:
 
 [source,nix]
