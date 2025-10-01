@@ -50,8 +50,7 @@ The implementation covers the following languages:
 | Fortran               | Wrapper-script around system `gfortran`   a|
 * ✅ tests pass
 | Haskell               | Wrapped system `ghc` but recompiled with LLVM support a|
-* ❌ #Compile error#
-* [yellow]#⚠# non-idiomatic nix test-program
+* [yellow]#⚠# Test's don't really test anything
 | Julia                 |                                           | ❌ #Compile error#, tests disabled
 | R                     |                                           | ❌ #Compile error#, need to update test-assertions
 | Zig                   |                                           | ❌ #Compile error#, #test is bullshit#
@@ -78,17 +77,4 @@ To execute all the tests run:
 [source,shell]
 ----
 nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
-----
-
-==== Simple execute C-Compiler
-
-[source,bash]
-----
-nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-c/default.nix {}'
-./result/bin/buildinfo
-----
-
-[source,bash]
-----
-nix-build -E 'with import ./zen-optimized-pkgs.nix {}; callPackage ./test/example-programs/buildinfo-fortran/default.nix {}'
 ----
