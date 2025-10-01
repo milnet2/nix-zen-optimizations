@@ -267,10 +267,30 @@ let
           dynamicArch = false;  # prefer fixed-target
         };
 
-        # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
-        blas = prev.blas.override { blasProvider = amd-blis; };
-        # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
-        lapack = prev.lapack.override { lapackProvider = amd-libflame; };
+        lapack-reference = prev.lapack-reference # AKA liblapack
+            .override {
+                # https://search.nixos.org/packages?channel=25.05&show=lapack-reference&query=liblapack
+                # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/la/lapack-reference/package.nix
+                # TODO: Does not work with LTO
+                inherit (final) gfortran;
+                inherit (noOptimizePkgs) cmake;
+            };
+
+        blas = prev.blas.override {
+            # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
+            # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/bl/blas/package.nix
+            inherit openblas lapack-reference;
+            blasProvider = final.amd-blis;
+        };
+
+        # See also: la-pack https://github.com/ROCm/rocm-libraries
+
+        lapack = prev.lapack.override {
+            # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
+            # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/la/lapack/package.nix
+            inherit openblas lapack-reference;
+            lapackProvider = final.amd-libflame;
+        };
     });
 
     # TODO: OpenMP
