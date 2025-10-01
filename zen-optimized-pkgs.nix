@@ -52,6 +52,7 @@ let
               # cpu = "";
             };
             go = {
+              GOOS = "linux";
               GOARCH = "amd64";
               # https://go.dev/wiki/MinimumRequirements#amd64
               GOAMD64 = if amdZenVersion > 4 then "v4" else "v3";
@@ -92,15 +93,16 @@ let
            buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/go \
+                    --set GOOS "${optimizedPlatform.platform.go.GOOS}" \
                     --set GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
                     --set GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
                     --add-flags "${optimizedPlatform.platform.go.GOFLAGS}"
                '';
         } // {
-            inherit (unoptimizedPkgs.go) badTargetPlatforms passthru GOOS;
-            # Preserve/define attributes used by some packages at eval-time
-            GOARCH = "${optimizedPlatform.platform.go.GOARCH}";
-            GOAMD64 = "${optimizedPlatform.platform.go.GOAMD64}";
+            # inherit (unoptimizedPkgs.go) badTargetPlatforms;
+            GOOS = optimizedPlatform.platform.go.GOOS;
+            GOARCH = optimizedPlatform.platform.go.GOARCH;
+            GOAMD64 = optimizedPlatform.platform.go.GOAMD64;
             meta = unoptimizedPkgs.go.meta // {
                 platforms = [ optimizedPlatform.platform ]; };
         };}
