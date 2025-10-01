@@ -4,6 +4,12 @@ These tests are also picked up in the test-suites a level up
 
 === Run individually
 
+Go::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-go.test.nix
+----
+
 Haskell::
 [source,shell]
 ----
