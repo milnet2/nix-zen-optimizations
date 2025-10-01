@@ -239,7 +239,7 @@ let
 
         amd-blis = prev.amd-blis.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix#L70
-            inherit (noOptimizePkgs) perl; # TODO: Python
+            # inherit (noOptimizePkgs) perl; # TODO: Python
             blas64 = false; # TODO: check
             withOpenMP = true; # TODO: check
             withArchitecture = "zen${toString amdZenVersion}";
@@ -296,7 +296,7 @@ in import importablePkgsDelegate rec {
 
     config.replaceStdenv = { pkgs, ...}:
         let
-            baseStdenv = pkgs.gcc14Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+            baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
             stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
         in
             stenvAdapter.wrapStdenv {
