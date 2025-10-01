@@ -11,8 +11,9 @@ stdenv.mkDerivation {
     export BUILD_DATE="$(date +%Y-%m-%d)"
     export BUILD_TIME="$(date +%H:%M:%S)"
 
-    rustc -o buildinfo buildinfo.rs
-    echo "rustc -o buildinfo buildinfo.rs" > buildinfo.log
+    echo "NIX_RUSTFLAGS=$NIX_RUSTFLAGS" > buildinfo.log
+    ${rustc}/bin/rustc -o buildinfo buildinfo.rs
+    echo "${rustc}/bin/rustc -o buildinfo buildinfo.rs" >> buildinfo.log
     ./buildinfo > buildinfo.json
   '';
 

@@ -165,7 +165,7 @@ let
            buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/rustc \
-                   --set-default RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
            '';
         } // {
             inherit (unoptimizedPkgs.rustc) badTargetPlatforms;
@@ -180,7 +180,7 @@ let
             buildInputs = [ unoptimizedPkgs.makeWrapper ];
             postBuild = ''
                 wrapProgram $out/bin/cargo \
-                    --set-default RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
             '';
         } // {
             inherit (prev.cargo) badTargetPlatforms;
