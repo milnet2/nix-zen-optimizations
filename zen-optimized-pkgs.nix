@@ -88,20 +88,20 @@ let
         go = prev.symlinkJoin {
            # https://search.nixos.org/packages?channel=unstable&show=go&query=go
            name = "go-${optimizedPlatform.platform.go.GOARCH}-${optimizedPlatform.platform.go.GOAMD64}";
-           paths = [ prev.go ];
-           buildInputs = [ prev.makeWrapper ];
+           paths = [ unoptimizedPkgs.go ];
+           buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/go \
-                    --set-default GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
-                    --set-default GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
-                    --set-default GOFLAGS "${optimizedPlatform.platform.go.GOFLAGS}"
+                    --set GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
+                    --set GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
+                    --add-flags "${optimizedPlatform.platform.go.GOFLAGS}"
                '';
         } // {
-            inherit (prev.go) badTargetPlatforms passthru GOOS;
+            inherit (unoptimizedPkgs.go) badTargetPlatforms passthru GOOS;
             # Preserve/define attributes used by some packages at eval-time
             GOARCH = "${optimizedPlatform.platform.go.GOARCH}";
             GOAMD64 = "${optimizedPlatform.platform.go.GOAMD64}";
-            meta = prev.go.meta // {
+            meta = unoptimizedPkgs.go.meta // {
                 platforms = [ optimizedPlatform.platform ]; };
         };}
     );
