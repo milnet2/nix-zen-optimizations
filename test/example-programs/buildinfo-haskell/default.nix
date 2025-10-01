@@ -7,9 +7,10 @@ stdenv.mkDerivation {
   src = ./.;
   nativeBuildInputs = [ ghc ];
 
+  # Optimizations will only be applied by LLVM so these aren't available from the Haskell-code
+  # We'll inspect the *.s files for that.
   buildPhase = ''
-    echo ${ghc}/bin/ghc -cpp Main.hs -o buildinfo >>buildinfo.log
-    ${ghc}/bin/ghc -cpp Main.hs -o buildinfo
+    ghc -keep-llvm-files -keep-s-files -cpp Main.hs -o buildinfo
     ./buildinfo >buildinfo.json
   '';
 
@@ -19,6 +20,7 @@ stdenv.mkDerivation {
     mkdir -p $out/lib
     cp buildinfo.log $out/lib || true
     cp buildinfo.json $out/lib
+    cp *.ll *.s *.S $out/lib
   '';
 
   meta = {
