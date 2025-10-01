@@ -99,13 +99,21 @@ let
     );
 
     haskellOverlay = (final: prev: rec {
+        # Need to compile-in LLVM into the systems ghc as it doesn't have this enabled by default and
+        # some optimizations only seem to be available through LLVM
+        ghcWithLlvm = ((unoptimizedPkgs.ghc)  # (unoptimizedPkgs.haskell.compiler.ghcHEAD)
+            .override {
+                useLLVM = true;
+                # buildTargetLlvmPackages = false;
+            });
         ghc = prev.symlinkJoin {
            name = "ghc-${optimizedPlatform.platform.gcc.arch}";
-           paths = [ prev.ghc ];
-           buildInputs = [ prev.makeWrapper ];
+           paths = [ ghcWithLlvm ];
+           buildInputs = [ unoptimizedPkgs.makeWrapper ];
+           # https://downloads.haskell.org/ghc/latest/docs/users_guide/flags.html
            postBuild = ''
                wrapProgram $out/bin/ghc \
-                      --set-default NIX_GHC_OPTS "-optc -march=${optimizedPlatform.platform.gcc.arch} -optc -mtune=${optimizedPlatform.platform.gcc.arch} -optlo -mcpu=${optimizedPlatform.platform.gcc.arch}"
+                      --add-flags "${optimizationParameter} -fllvm -optlc -mcpu=${optimizedPlatform.platform.gcc.tune} -optlo ${optimizationParameter} -optlo -enable-unsafe-fp-math -optlo -enable-no-nans-fp-math -optlo -enable-no-infs-fp-math -optlo -enable-no-signed-zeros-fp-math"
                '';
         };
     });
