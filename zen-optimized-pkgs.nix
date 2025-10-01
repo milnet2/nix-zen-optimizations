@@ -20,6 +20,9 @@
 #            gawk
         expat readline
         gnum4 pkg-config bison gettext texinfo
+
+        ncurses libssh2
+        libpfm openssl bash-interactive
         ; }
 }:
 let
@@ -158,30 +161,30 @@ let
     rustOverlay = (final: prev: rec {
         rustc = prev.symlinkJoin {
            name = "rustc-${optimizedPlatform.platform.gcc.tune}";
-           paths = [ prev.rustc ];
-           buildInputs = [ prev.makeWrapper ];
+           paths = [ unoptimizedPkgs.rustc ];
+           buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/rustc \
-                   --set-default RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
            '';
         } // {
-            inherit (prev.rustc) badTargetPlatforms;
-            meta = prev.rustc.meta // {
-                platforms = prev.rustc.meta.platforms ++ optimizedPlatform.platform; };
+            inherit (unoptimizedPkgs.rustc) badTargetPlatforms;
+            meta = unoptimizedPkgs.rustc.meta // {
+                platforms = unoptimizedPkgs.rustc.meta.platforms ++ optimizedPlatform.platform; };
             targetPlatforms = [ optimizedPlatform.platform ];
         };
         cargo = prev.symlinkJoin {
             # https://search.nixos.org/packages?channel=unstable&show=cargo&query=cargo
             name = "cargo-${optimizedPlatform.platform.gcc.tune}";
-            paths = [ prev.cargo ];
-            buildInputs = [ prev.makeWrapper ];
+            paths = [ unoptimizedPkgs.cargo ];
+            buildInputs = [ unoptimizedPkgs.makeWrapper ];
             postBuild = ''
                 wrapProgram $out/bin/cargo \
-                    --set-default RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
             '';
         } // {
             inherit (prev.cargo) badTargetPlatforms;
-            meta = prev.cargo.meta // {
+            meta = unoptimizedPkgs.cargo.meta // {
                 platforms = rustc.meta.platforms; };
             targetPlatforms = [ optimizedPlatform.platform ];
         };}
@@ -236,7 +239,7 @@ in import importablePkgsDelegate rec {
        juliaOverlay
        pythonOverlay
        rOverlay
-       # rustOverlay # TODO: Broken!
+       rustOverlay
        zigOverlay
 
        openBlasOverlay

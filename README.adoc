@@ -34,19 +34,21 @@ The implementation covers the following languages:
 |===
 |Language |Mechanism |Status
 
-| C                     | Wrapper -script around system `gcc`       a|
+| C                     | Wrapper-script around system `gcc`        a|
 * [yellow]#⚠# Not all optimizations applied properly
 * ✅ tests pass - #double check#
-| C++                   | Wrapper -script around system `gcc`       a|
+| C++                   | Wrapper-script around system `gcc`        a|
 * [yellow]#⚠# Not all optimizations applied properly
 * ✅ tests pass - #double check#
 | Go                    |                                           | ❌ #Compile error#, tests disabled
-| Rust                  |                                           | ❌ #Compile error#, tests disabled
+| Rust                  | Wrapper-script around system `rustc` and `cargo` a|
+* ✅ tests pass
 | Python 3 (minimal)    | Interpreter compiled with optimizations   a|
 * [yellow]#⚠# Should prefer local build because of optimizations
 * ✅ tests pass
 * [yellow]#⚠# Tests should be more specific on optimizations
-| Fortran               | Wrapper -script around system `gfortran`  | ✅ tests pass
+| Fortran               | Wrapper-script around system `gfortran`   a|
+* ✅ tests pass
 | Haskell               |                                           | ❌ #Compile error#, #not idiomatic nix#
 | Julia                 |                                           | ❌ #Compile error#, tests disabled
 | R                     |                                           | ❌ #Compile error#, need to update test-assertions

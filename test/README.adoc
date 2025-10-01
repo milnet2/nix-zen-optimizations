@@ -9,3 +9,9 @@ Python::
 ----
 nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-python.test.nix
 ----
+
+Rust::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-rust.test.nix
+----
