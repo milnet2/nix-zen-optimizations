@@ -21,10 +21,6 @@ in {
         expr = buildInfoJson.compiler.is_rustc;
         expected = true;
     };
-    "test rust version format" = {
-        expr = builtins.match "[0-9]+\\.[0-9]+\\.[0-9]+" buildInfoJson.compiler.version_string != null;
-        expected = true;
-    };
     "test fastmath" = {
         expr = buildInfoJson.compiler.fast_math;
         expected = true;

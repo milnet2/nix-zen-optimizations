@@ -70,14 +70,9 @@ fn main() {
     #[cfg(target_feature = "avx512vbmi")]
     println!("\"avx512vbmi\": true,");
     #[cfg(target_feature = "avx512vnni")]
-    println!("\"avx512vnni\": true");
+    println!("\"avx512vnni\": true,");
+    println!("\"comma_terminate\": \"hack here\"");
 
-    println!("}},");
-
-    // --- Build block ---
-    println!("\"build\": {{");
-    println!("\"date\": \"{}\",", option_env!("BUILD_DATE").unwrap_or("unknown"));
-    println!("\"time\": \"{}\"", option_env!("BUILD_TIME").unwrap_or("unknown"));
     println!("}},");
 
     // --- Target block ---
