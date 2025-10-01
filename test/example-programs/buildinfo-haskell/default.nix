@@ -8,7 +8,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ ghc ];
 
   buildPhase = ''
-    ${ghc}/bin/ghc Main.hs -o buildinfo
+    ${ghc}/bin/ghc -cpp Main.hs -o buildinfo
     ./buildinfo >buildinfo.json
   '';
 
