@@ -274,6 +274,7 @@ let
                 # TODO: Does not work with LTO
                 inherit (final) gfortran;
                 inherit (noOptimizePkgs) cmake;
+                inherit (unoptimizedPkgs) stdenv; # Because of LTO
             };
 
         blas = prev.blas.override {
