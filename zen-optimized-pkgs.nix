@@ -233,6 +233,27 @@ let
     # ---------------------------------------------
     # Overrides follow (libraries)
     openBlasOverlay = (final: prev: rec {
+        aocl-utils = prev.aocl-utils.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/ao/aocl-utils/package.nix
+        };
+
+        amd-blis = prev.amd-blis.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix#L70
+            inherit (noOptimizePkgs) perl; # TODO: Python
+            blas64 = false; # TODO: check
+            withOpenMP = true; # TODO: check
+            withArchitecture = "zen${toString amdZenVersion}";
+        };
+
+        amd-libflame = prev.amd-libflame.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix
+            inherit amd-blis aocl-utils;
+            inherit (final) gfortran;
+            blas64 = false; # TODO: check
+            withOpenMP = true; # TODO: check
+            withAMDOpt = true;
+        };
+
         # https://search.nixos.org/packages?channel=unstable&show=openblas&query=openblas
         openblas = prev.openblas.override {
           # See https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/libraries/science/math/openblas/default.nix
@@ -244,9 +265,9 @@ let
         };
 
         # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
-        blas = prev.blas.override { blasProvider = openblas; };
+        blas = prev.blas.override { blasProvider = amd-blis; };
         # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
-        lapack = prev.lapack.override { lapackProvider = openblas; };
+        lapack = prev.lapack.override { lapackProvider = amd-libflame; };
     });
 
     # TODO: OpenMP
