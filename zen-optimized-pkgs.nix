@@ -106,14 +106,23 @@ let
                 useLLVM = true;
                 # buildTargetLlvmPackages = false;
             });
-        ghc = prev.symlinkJoin {
+        ghc = let
+            llvmFlags = [
+                "-mcpu=${optimizedPlatform.platform.gcc.tune}"
+                "-enable-unsafe-fp-math"
+                "-enable-no-nans-fp-math"
+                "-enable-no-infs-fp-math"
+                "-enable-no-signed-zeros-fp-math"
+                ];
+            llvmFlagsGhcWrapped = toString ( map (x: "-optlc " + x) llvmFlags);
+        in prev.symlinkJoin {
            name = "ghc-${optimizedPlatform.platform.gcc.arch}";
            paths = [ ghcWithLlvm ];
            buildInputs = [ unoptimizedPkgs.makeWrapper ];
            # https://downloads.haskell.org/ghc/latest/docs/users_guide/flags.html
            postBuild = ''
                wrapProgram $out/bin/ghc \
-                      --add-flags "${optimizationParameter} -fllvm -optlc -mcpu=${optimizedPlatform.platform.gcc.tune} -optlo ${optimizationParameter} -optlo -enable-unsafe-fp-math -optlo -enable-no-nans-fp-math -optlo -enable-no-infs-fp-math -optlo -enable-no-signed-zeros-fp-math"
+                      --add-flags "${optimizationParameter} -fllvm ${llvmFlagsGhcWrapped}"
                '';
         };
     });
