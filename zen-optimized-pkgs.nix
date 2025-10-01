@@ -15,7 +15,7 @@
         perl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
-        ncurses adns tcl
+        adns tcl
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
         expat readline
