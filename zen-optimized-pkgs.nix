@@ -20,6 +20,9 @@
 #            gawk
         expat readline
         gnum4 pkg-config bison gettext texinfo
+
+        ncurses libssh2
+        libpfm openssl bash-interactive
         ; }
 }:
 let
