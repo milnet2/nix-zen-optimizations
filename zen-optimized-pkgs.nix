@@ -12,7 +12,7 @@
         # The build will fail. ... At the very end :(
         # bash bashNonInteractive  diffutils findutils
 
-        nasm perl # TODO: Perl still seems to be built anyways
+        nasm perl curl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
         cmake tradcpp
@@ -22,8 +22,9 @@
         expat readline
         gnum4 pkg-config bison gettext texinfo
 
-        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango
-        fontforge fontconfig
+        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango asciidoc
+        fontforge fontconfig libXft
+        xorg # xorgproto libXt libX11
         libtiff libjpeg
 
         jdk # TODO: Optimize this?
@@ -180,9 +181,12 @@ let
     rOverlay = (final: prev: {
         # TODO: That's not a lot
         R = prev.R.override {
-            inherit (noOptimizePkgs) perl ncurses readline texinfo bison jdk tzdata
+            inherit (noOptimizePkgs)
+                perl ncurses curl readline texinfo bison jdk tzdata
                 texlive texliveSmall graphviz pango
                 libtiff libjpeg;
+            libX11 = noOptimizePkgs.xorg.libX11;
+            libXt = noOptimizePkgs.xorg.libXt;
             inherit (final) blas lapack gfortran;
         };
     });
@@ -245,6 +249,7 @@ let
             blas64 = false; # TODO: check
             withOpenMP = true; # TODO: check
             withArchitecture = "zen${toString amdZenVersion}";
+            inherit (unoptimizedPkgs) stdenv; # TODO Because of LTO
         };
 
         amd-libflame = prev.amd-libflame.override {
@@ -271,10 +276,9 @@ let
             .override {
                 # https://search.nixos.org/packages?channel=25.05&show=lapack-reference&query=liblapack
                 # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/la/lapack-reference/package.nix
-                # TODO: Does not work with LTO
                 inherit (final) gfortran;
                 inherit (noOptimizePkgs) cmake;
-                inherit (unoptimizedPkgs) stdenv; # Because of LTO
+                inherit (unoptimizedPkgs) stdenv; # TODO Because of LTO
             };
 
         blas = prev.blas.override {
