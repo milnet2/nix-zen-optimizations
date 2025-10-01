@@ -12,7 +12,7 @@
         # The build will fail. ... At the very end :(
         # bash bashNonInteractive  diffutils findutils
 
-        perl # TODO: Perl still seems to be built anyways
+        nasm perl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
         adns tcl
@@ -20,6 +20,11 @@
 #            gawk
         expat readline
         gnum4 pkg-config bison gettext texinfo
+
+        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango fontforge
+        libtiff
+
+        jdk # TODO: Optimize this?
 
         ncurses libssh2
         libpfm openssl bash-interactive
@@ -172,7 +177,12 @@ let
 
     rOverlay = (final: prev: {
         # TODO: That's not a lot
-        R = prev.R.override { blas = final.blas; lapack = final.lapack; };
+        R = prev.R.override {
+            inherit (noOptimizePkgs) perl ncurses readline texinfo bison jdk tzdata
+                texlive texliveSmall graphviz pango
+                libtiff;
+            inherit (final) blas lapack gfortran;
+        };
     });
 
     rustOverlay = (final: prev: rec {
@@ -253,13 +263,14 @@ in import importablePkgsDelegate rec {
        fortranOverlay
        goOverlay
        haskellOverlay
-       juliaOverlay
-       pythonOverlay
-       rOverlay
        rustOverlay
        zigOverlay
 
        openBlasOverlay
+
+       pythonOverlay
+       rOverlay
+       juliaOverlay
     ];
 
     config.replaceStdenv = { pkgs, ...}:
