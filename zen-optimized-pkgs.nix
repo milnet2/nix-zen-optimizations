@@ -15,14 +15,16 @@
         nasm perl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
+        cmake tradcpp
         adns tcl
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
         expat readline
         gnum4 pkg-config bison gettext texinfo
 
-        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango fontforge
-        libtiff
+        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango
+        fontforge fontconfig
+        libtiff libjpeg
 
         jdk # TODO: Optimize this?
 
@@ -180,7 +182,7 @@ let
         R = prev.R.override {
             inherit (noOptimizePkgs) perl ncurses readline texinfo bison jdk tzdata
                 texlive texliveSmall graphviz pango
-                libtiff;
+                libtiff libjpeg;
             inherit (final) blas lapack gfortran;
         };
     });
@@ -239,7 +241,7 @@ let
 
         amd-blis = prev.amd-blis.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix#L70
-            # inherit (noOptimizePkgs) perl; # TODO: Python
+            inherit (noOptimizePkgs) perl; # TODO: Python
             blas64 = false; # TODO: check
             withOpenMP = true; # TODO: check
             withArchitecture = "zen${toString amdZenVersion}";
@@ -248,6 +250,7 @@ let
         amd-libflame = prev.amd-libflame.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix
             inherit amd-blis aocl-utils;
+            inherit (noOptimizePkgs) cmake;
             inherit (final) gfortran;
             blas64 = false; # TODO: check
             withOpenMP = true; # TODO: check
