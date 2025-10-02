@@ -17,3 +17,10 @@ To build the program with the optimized Nix setup from this repository:
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
 ----
+
+Dependency tree:
+
+[source,bash]
+----
+nix run github:utdemir/nix-tree -- $(readlink -f ./result)
+----
