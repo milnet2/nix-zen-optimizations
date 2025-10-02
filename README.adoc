@@ -1,10 +1,6 @@
 == Compile programs optimized for Zen using nix
 
-Contains facilities for installing programs on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
-
-----
-⚠⚠⚠ The repo is currently *mostly broken* ⚠⚠⚠
-----
+Contains facilities for building packages on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
 
 The intended use of it is through an "alternative" `pkgs` from the system like:
 
@@ -23,8 +19,20 @@ pkgsTuned = import ./zen-optimized-pkgs.nix {
 
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
 
-CAUTION:: I'm no expert in this so the approaches may be unorthodox or not work properly.
-    I've added some tests which seem to work, though.
+=== Disclaimer
+
+Here is why you should *not* use the repo:
+
+* The repo is *unmaintained!* - I've just not the time to take care of it
+** I thought it was easier - it's not - things will break quite easily. Expect to invest quite some time.
+** There's still a lot missing / not optimized
+* There are likely better alternatives - check out
+** Specific OCI/Docker images for the stuff you'll want optimized
+** Official https://github.com/ROCm/TheRock[AMD TheRock] which also has Docker-images as basis
+** Nix packages under `pkgs.rocmPackages` and where it's from https://github.com/nixos-rocm/nixos-rocm[nixos-rocm (now obsolete)]
+* You'll be compiling a lot - think twice if it's worth it
+
+
 
 === Covered languages
 
