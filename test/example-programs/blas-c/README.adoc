@@ -1,0 +1,37 @@
+== BLAS example program
+
+A simple long-running BLAS job needing not a lot of memory.
+
+=== Building with Nix
+
+CPU::
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { isCpu = true; }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+Example output:
+
+----
+Problem: M=4096 N=4096 K=4096  repeats=100  (~192.0 MB)
+Time: 23.435 s   Perf: 586.46 GFLOP/s   Checksum: -2304.952393
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+CPU::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { isCpu = true; }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+Example output:
+
+----
+Problem: M=4096 N=4096 K=4096  repeats=100  (~192.0 MB)
+Time: 24.693 s   Perf: 556.60 GFLOP/s   Checksum: -2304.965576
+----
