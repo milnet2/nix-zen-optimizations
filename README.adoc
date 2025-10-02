@@ -24,7 +24,7 @@ Here is why you should *not* use the repo:
 
 * The repo is *unmaintained!* - I've just not the time to take care of it
 ** I thought it was easier - it's not - things will break quite easily. Expect to invest quite some time.
-** There's still a lot missing / not optimized
+** There's still a lot missing / not optimized - see also https://github.com/milnet2/nix-zen-optimizations/issues[issues]
 * There are likely better alternatives - check out
 ** Specific OCI/Docker images for the stuff you'll want optimized
 ** Official https://github.com/ROCm/TheRock[AMD TheRock] which also has Docker-images as basis
@@ -84,17 +84,6 @@ The implementation use the following libraries:
 ** _R_
 * Uses optimized `CC` from above
 |===
-
-=== Open work
-
-* Use the _ROCM_ packages
-** See also: https://github.com/NixOS/nixpkgs/blob/60a2d618f68142e2e697a7cec22c33212751d73a/pkgs/development/rocm-modules/6/llvm/default.nix#L182
-* OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
-* _gcc_ (and _binutils_) still seems to be built once I use Python :(
-* Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs) everywhere (not only _R_)
-* Set default-args to the Python interpreter - like `-OO` `-X no_debug_ranges`
-* Don't build the bootstrap-packages
-* https://github.com/ROCm/TheRock
 
 === Run tests
 
