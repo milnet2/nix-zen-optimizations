@@ -84,13 +84,3 @@ The implementation use the following libraries:
 ** _R_
 * Uses optimized `CC` from above
 |===
-
-=== Run tests
-
-Tests compile simple programs (xref:test/example-programs/README.adoc[]) in the individual languages and inspect their output.
-To execute all the tests run:
-
-[source,shell]
-----
-nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
-----
