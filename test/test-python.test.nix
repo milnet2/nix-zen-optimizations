@@ -7,7 +7,7 @@
    pkgsTuned ? import ../zen-optimized-pkgs.nix {
         inherit importablePkgsDelegate lib;
         amdZenVersion = 2; # TODO: 5
-        ltoLevel = "thin"; },
+        isLtoEnabled = true; },
     isAvx512Expected ? false,
 }: let
     buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-python {};

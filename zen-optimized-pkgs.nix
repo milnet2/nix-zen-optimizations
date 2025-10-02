@@ -4,7 +4,7 @@
     unoptimizedPkgs ? (import importablePkgsDelegate {}), # This is a `pkgs`. If we want a package without optimizations we'll pull it from here
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
-    ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
+    isLtoEnabled ? false, # Be careful with that: It will easily break stuff
     optimizationParameter ? "-O3",
     basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
@@ -61,8 +61,7 @@ let
                 # https://rustc-dev-guide.rust-lang.org/building/optimized-build.html
                 rustcTarget = "x86_64-unknown-linux-gnu";
                 cargoShortTarget = "x86_64-unknown-linux-gnu";
-                lto = ltoLevel;
-            };
+            } // (if isLtoEnabled then { lto = "thin"; } else {}) ;
         };
     };
 
@@ -96,7 +95,7 @@ let
                     --set GOOS "${optimizedPlatform.platform.go.GOOS}" \
                     --set GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
                     --set GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
-                    --set-default CGO_CFLAGS "${optimizationParameter} -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune} -flto=auto -fipa-icf" \
+                    --set-default CGO_CFLAGS "${optimizationParameter} -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-flto=auto" else ""} -fipa-icf" \
                     --set-default CGO_LDFLAGS "--as-needed --gc-sections"
                '';
         } // {
@@ -147,7 +146,7 @@ let
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
         python3 = (basePythonPackage prev).override {
-            enableLTO = true;
+            enableLTO = isLtoEnabled;
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
@@ -206,7 +205,7 @@ let
            buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/rustc \
-                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""} -C codegen-units=1"
            '';
         } // {
             inherit (unoptimizedPkgs.rustc) badTargetPlatforms;
@@ -221,7 +220,7 @@ let
             buildInputs = [ unoptimizedPkgs.makeWrapper ];
             postBuild = ''
                 wrapProgram $out/bin/cargo \
-                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""}  -C codegen-units=1"
             '';
         } // {
             inherit (prev.cargo) badTargetPlatforms;

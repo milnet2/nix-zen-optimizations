@@ -8,7 +8,7 @@
     pkgsTuned = import ./zen-optimized-pkgs.nix {
         inherit importablePkgsDelegate lib;
         amdZenVersion = 2; # TODO: 5
-        ltoLevel = "thin"; };
+        isLtoEnabled = true; };
     isAvx512Expected = false;
 in {
     "Optimized C compilation" = let

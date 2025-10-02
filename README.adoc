@@ -9,12 +9,11 @@ The intended use of it is through an "alternative" `pkgs` from the system like:
 # Where this would be your regular one
 pkgs = import <nixpkgs> {};
 
-# There can be an additional
+# There can be an additional (short variant):
 pkgsTuned = import ./zen-optimized-pkgs.nix {
-    inherit  lib;
     importablePkgsDelegate = <nixpkgs>;
     amdZenVersion = 2;
-    ltoLevel = "thin"; };
+    };
 ----
 
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
@@ -88,7 +87,6 @@ The implementation use the following libraries:
 
 === Open work
 
-* Properly use `lto`
 * Use the _ROCM_ packages
 ** See also: https://github.com/NixOS/nixpkgs/blob/60a2d618f68142e2e697a7cec22c33212751d73a/pkgs/development/rocm-modules/6/llvm/default.nix#L182
 * OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
