@@ -97,7 +97,6 @@ The implementation use the following libraries:
 * Set default-args to the Python interpreter - like `-OO` `-X no_debug_ranges`
 * Don't build the bootstrap-packages
 * https://github.com/ROCm/TheRock
-* Optimize `jdk`
 
 === Run tests
 
