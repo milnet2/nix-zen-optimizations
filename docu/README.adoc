@@ -1,0 +1,7 @@
+== Documentation of the optimizations
+
+The basis for the repo is formed by "_../zen-optimized-pkgs.nix_".
+Follow these links to dive into the documentation:
+
+* xref:zen-optimized-pkgs.adoc[] describes parameters and workings of _../zen-optimized-pkgs.nix_
+* xref:../test/README.adoc[] describes tests

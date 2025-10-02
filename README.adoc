@@ -18,6 +18,8 @@ pkgsTuned = import ./zen-optimized-pkgs.nix {
 
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
 
+See xref:docu/zen-optimized-pkgs.adoc[] for the full description of parameters.
+
 === Disclaimer
 
 Here is why you should *not* use the repo:

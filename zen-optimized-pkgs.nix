@@ -1,4 +1,10 @@
-# Provides a `pkgs` for optimized code
+# Provides a `pkgs` for optimized code.
+
+# See documentation at docu/zen-optimized-pkgs.adoc
+# See documentation at docu/zen-optimized-pkgs.adoc
+# See documentation at docu/zen-optimized-pkgs.adoc
+
+# tag::header[]
 {
     importablePkgsDelegate ? <nixpkgs>, # The optimized packages will be based on this
     unoptimizedPkgs ? (import importablePkgsDelegate {}), # This is a `pkgs`. If we want a package without optimizations we'll pull it from here
@@ -8,6 +14,7 @@
     optimizationParameter ? "-O3",
     basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
+# end::header[]
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
         # bash bashNonInteractive ncurses diffutils findutils

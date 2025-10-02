@@ -1,0 +1,42 @@
+== _zen-optimized-pkgs.nix_ as `pkgs` source
+
+The function can be used to wrap a buildable instance of `<nixpkgs>` (or unstable).
+It replaces `stdenv` in the instance and applies some `overlays` for providing optimized builds.
+
+Once instantiated it aught to be usable light `pkgs`.
+
+:toc:
+
+=== Description of parameters
+
+The section documents parameters passed to the function:
+
+[source,nix]
+----
+include::../zen-optimized-pkgs.nix[tag=header]
+       # ....
+    }
+}:
+----
+
+Parameter `importablePkgsDelegate`::
+    The _source-location_ from where the optimized _pkgs_ are picked from. Typically, `<nixpkgs>` or unstable will do.
+Parameter `unoptimizedPkgs` (helper)::
+    This is rather a helper-parameter. It's intended to be the instantiated variant of `importablePkgsDelegate` (thus providing a `pkgs`).
+    If we want a package without optimizations we'll pull it from here.
+Parameter `amdZenVersion`::
+    The AMD Zen version-number (int). Optimization-parameters like `-march=` or `GOAMD64` will be "computed" based on this number.
+Parameter `isLtoEnabled`::
+    Boolean weather to enable LTO-optimizations on some packages.
+    Be careful with enabling that: It will easily break stuff.
+Parameter `optimizationParameter`::
+    String representing the optimization-parameters passed to the compilers. Typically `-O2` or `-O3`
+Parameter `basePythonPackage`::
+    Lambda `pkgs -> derivation` for selecting the python-package to use as basis for optimizations.
+Parameter `noOptimizePkgs`::
+    List of derivations to overlay on the resulting `pkgs`.
+    The intended use is to list derivations not to be rebuilt as part of the optimizations. +
++
+--
+CAUTION:: Be careful what you add here. If it transitively pulls in stuff from `unoptimizedPkgs.pkgs` The build will fail. ... At the very end :(
+--
