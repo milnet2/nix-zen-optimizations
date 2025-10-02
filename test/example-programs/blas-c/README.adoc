@@ -35,6 +35,22 @@ nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { isCpu = fals
 ./result/bin/blas-test 4096 4096 100
 ----
 
+==== Spoofing GPU
+
+This is a hack if the GPU isn't officially supported:
+
+[source,bash]
+----
+HSA_OVERRIDE_GFX_VERSION=9.0.0 ./result/bin/blas-test 4096 4096 100
+----
+
+Example output:
+
+----
+Problem: M=4096 N=4096 K=4096  repeats=100  (~192.0 MB)
+Time: 12.223 s   Perf: 1124.43 GFLOP/s   Checksum: -2304.831055
+----
+
 === Using Optimized Nix (with Zen optimizations)
 
 To build the program with the optimized Nix setup from this repository:
