@@ -1,0 +1,25 @@
+== BLAS implementations
+
+There are several AMD optimized _BLAS_ implementations which can be used:
+
+=== `pkgs.amd-blis`
+
+See Nix Derivation https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix[amd-blis].
+
+> BLAS-compatible library optimized for AMD CPUs
+
+=== `rocmPackages.rocblas`
+
+See Nix derivation https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/rocblas/default.nix[rocmPackages.rocblas].
+
+> BLAS implementation for ROCm platform
+
+https://github.com/ROCm/rocBLAS (deprecated) -> moved to https://github.com/ROCm/rocm-libraries
+
+=== `rocmPackages.hipblas`
+
+See Nix derivation https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/hipblas/default.nix[rocmPackages.hipblas].
+
+> ROCm BLAS marshalling library
+
+https://github.com/ROCm/hipBLAS (deprecated) -> moved to https://github.com/ROCm/rocm-libraries
