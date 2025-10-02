@@ -5,3 +5,4 @@ Follow these links to dive into the documentation:
 
 * xref:zen-optimized-pkgs.adoc[] describes parameters and workings of _../zen-optimized-pkgs.nix_
 * xref:../test/README.adoc[] describes tests
+* xref:blas-implementations.adoc[] BLAS alternatives

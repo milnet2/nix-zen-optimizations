@@ -1,25 +1,43 @@
-== BLAS implementations
+== BLAS implementations (AMD-focused, Nix)
 
-There are several AMD optimized _BLAS_ implementations which can be used:
+There are several AMD-optimized BLAS (_Basic Linear Algebra Subprograms_) implementations available on Nix for AMD-based systems.
+Each targets different hardware (CPU vs GPU) or use-cases.
 
-=== `pkgs.amd-blis`
+=== CPU-only: `pkgs.amd-blis` (AOCL BLIS) + `amd-libflame`
 
-See Nix Derivation https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix[amd-blis].
+AMD’s optimized BLAS library for CPUs. It is a drop-in BLAS implementation highly tuned for AMD Zen-based processors (e.g. Ryzen, EPYC, Threadripper). AMD BLIS leverages multi-threading and AMD-specific optimizations to accelerate linear algebra operations on the CPU.
 
-> BLAS-compatible library optimized for AMD CPUs
+See Nix derivations:
 
-=== `rocmPackages.rocblas`
+* https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix[amd-blis] (AMD optimized BLAS compatible library)
+* https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix[amd-libflame] (AMD optimized LAPACK compatible library)
 
-See Nix derivation https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/rocblas/default.nix[rocmPackages.rocblas].
+This combination is set up in "_../zen-optimized-pkgs.nix_" through the `openBlasOverlay`:
 
-> BLAS implementation for ROCm platform
+[source,nix]
+----
+include::../zen-optimized-pkgs.nix[tag=openBlasOverlay]
+----
 
-https://github.com/ROCm/rocBLAS (deprecated) -> moved to https://github.com/ROCm/rocm-libraries
+=== GPU-only: `rocmPackages.rocblas` (Radeon only)
 
-=== `rocmPackages.hipblas`
+See Nix derivation: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/rocblas/default.nix[rocmPackages.rocblas].
 
-See Nix derivation https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/hipblas/default.nix[rocmPackages.hipblas].
+It is analogous to NVIDIA’s cuBLAS, but optimized for AMD GPUs.
+rocBLAS will outperform any CPU BLAS by utilizing the GPU’s parallel compute capabilities.
 
-> ROCm BLAS marshalling library
+- Project: https://github.com/ROCm/rocm-libraries/tree/develop/libraries/rocBLAS
+- Considerations:
+* Requires a ROCm-supported GPU and matching driver/kernel. Check the ROCm compatibility matrix for your ROCm version.
+* Runtime requires HIP/ROCm userspace; host BLAS/LAPACK still needed for CPU code paths.
 
-https://github.com/ROCm/hipBLAS (deprecated) -> moved to https://github.com/ROCm/rocm-libraries
+=== GPU-only: `rocmPackages.hipblas` (also Nvidia)
+
+> use hipBLAS only if you need portability between AMD and NVIDIA devices
+
+- Nix derivation: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/rocm-modules/6/hipblas/default.nix[rocmPackages.hipblas]
+- Project: https://github.com/ROCm/rocm-libraries/tree/develop/libraries/hipBLAS
+- What it is: cuBLAS-like marshalling/shim on top of rocBLAS, easing porting of CUDA code to ROCm/HIP.
+- When to use: If your application expects a cuBLAS-like API or you want minimal source changes when targeting AMD GPUs.
+
+

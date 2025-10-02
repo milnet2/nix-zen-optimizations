@@ -239,6 +239,9 @@ let
 
     # ---------------------------------------------
     # Overrides follow (libraries)
+
+# See: docu/blas-implementations.adoc
+# tag::openBlasOverlay[]
     openBlasOverlay = (final: prev: rec {
         aocl-utils = prev.aocl-utils.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/ao/aocl-utils/package.nix
@@ -298,6 +301,7 @@ let
             lapackProvider = final.amd-libflame;
         };
     });
+# end::openBlasOverlay[]
 
     # TODO: OpenMP
 
