@@ -344,8 +344,8 @@ in import importablePkgsDelegate rec {
                 inherit baseStdenv;
                 extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
                     "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
-                    "-flto=auto" "-fipa-icf" ];
-                extraCFlagsLink = [ "-flto=auto" ]; # TODO: Parameter mot yet picked up properly
+                    "-fipa-icf" ];
+                extraCFlagsLink = [ ]; # TODO: Parameter mot yet picked up properly
                 extraCPPFlagsCompile = [ "-DNDEBUG" ]; # TODO: Parameter mot yet picked up properly
                 extraLdFlags = [ "--as-needed" "--gc-sections" ];
                 extraHardeningDisable = [ "fortify" ]; # TODO: Parameter mot yet picked up properly
