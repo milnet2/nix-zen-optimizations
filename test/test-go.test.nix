@@ -33,8 +33,8 @@ in {
         expected = "linux";
     };
 
-    "test GOAMD64" = {
-        expr = buildInfoJson.compiler.GOAMD64;
-        expected = "v3"; # TODO: Or v4
+    "test GOAMD64 is v3 or v4" = {
+        expr = (buildInfoJson.compiler.GOAMD64 == "v3") || (buildInfoJson.compiler.GOAMD64 == "v4") ;
+        expected = true;
     };
 }
