@@ -10,7 +10,7 @@
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
-        # bash bashNonInteractive  diffutils findutils
+        # bash bashNonInteractive ncurses diffutils findutils
 
         nasm perl curl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
