@@ -22,6 +22,8 @@ double blas_sgemm(BlasHandle* h,
 // Cleanup backend (destroy handles, free device memory, etc.)
 void blas_finalize(BlasHandle* h);
 
+size_t blas_get_engine_info(char* buf, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

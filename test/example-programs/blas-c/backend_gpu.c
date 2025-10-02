@@ -107,3 +107,30 @@ void blas_finalize(BlasHandle* h) {
   if (h->handle) rocblas_destroy_handle(h->handle);
   free(h);
 }
+
+size_t blas_get_engine_info(char* buf, size_t len) {
+  if (!buf || len == 0) return 0;
+  buf[0] = '\0';
+
+  // rocBLAS version string
+  size_t need = 0;
+  if (rocblas_get_version_string_size(&need) == rocblas_status_success && need > 0) {
+    // Write directly into user buffer (rocBLAS NUL-terminates)
+    if (rocblas_get_version_string(buf, len) == rocblas_status_success) {
+      // Optionally append HIP device arch for convenience
+      int dev = 0; hipGetDevice(&dev);
+      hipDeviceProp_t p; if (hipGetDeviceProperties(&p, dev) == hipSuccess) {
+        size_t n = strnlen(buf, len);
+        if (n + 32 < len) {
+          snprintf(buf + n, len - n, " (device=%s, arch=%s)", p.name, p.gcnArchName);
+          buf[len-1] = '\0';
+        }
+      }
+      return strnlen(buf, len);
+    }
+  }
+
+  snprintf(buf, len, "rocBLAS (version unknown)");
+  buf[len-1] = '\0';
+  return strnlen(buf, len);
+}

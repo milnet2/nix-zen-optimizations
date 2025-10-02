@@ -9,12 +9,12 @@
 }:
 let
     buildCpu = ''
-      echo "== CPU build with CBLAS (e.g. amd-blis)"
+      echo "== CPU build with CBLAS (e.g. amd-blis, OpenBLAS, ...)"
       # Try pkg-config for CBLAS; fall back to common flags if not available.
       CFLAGS_EXTRA="$(pkg-config --cflags cblas 2>/dev/null || true)"
       LDLIBS_EXTRA="$(pkg-config --libs   cblas 2>/dev/null || echo "-lcblas -lblas")"
 
-      $CC -o build/blas-test-cpu main.c backend_cpu.c $CFLAGS_EXTRA $LDLIBS_EXTRA
+      $CC -o build/blas-test-cpu main.c backend_cpu.c $CFLAGS_EXTRA $LDLIBS_EXTRA -ldl
     '';
     buildGpuCc = ''
       echo "== GPU build with rocBLAS C-Compiler"

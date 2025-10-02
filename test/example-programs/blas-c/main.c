@@ -49,6 +49,10 @@ int main(int argc, char** argv) {
   init_matrix(B, K, N, 2u);
   memset(C, 0, szC);
 
+  char eng[256];
+  blas_get_engine_info(eng, sizeof eng);
+  printf("Engine: %s\n", eng);
+
   printf("Problem: M=%d N=%d K=%d  repeats=%d  (~%.1f MB)\n",
          M, N, K, repeats, (szA+szB+szC)/(1024.0*1024.0));
 
