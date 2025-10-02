@@ -86,7 +86,7 @@ let
     );
 
     goOverlay = (final: prev: {
-        go = prev.symlinkJoin  {
+        go = prev.symlinkJoin {
            # https://search.nixos.org/packages?channel=unstable&show=go&query=go
            name = "go-${optimizedPlatform.platform.go.GOARCH}-${optimizedPlatform.platform.go.GOAMD64}";
            paths = [ unoptimizedPkgs.go ];
@@ -101,7 +101,7 @@ let
                     --add-flags "${optimizedPlatform.platform.go.GOFLAGS}"
                '';
         } // {
-            # inherit (unoptimizedPkgs.go) badTargetPlatforms;
+            inherit (unoptimizedPkgs.go) badTargetPlatforms;
             GOOS = optimizedPlatform.platform.go.GOOS;
             GOARCH = optimizedPlatform.platform.go.GOARCH;
             GOAMD64 = optimizedPlatform.platform.go.GOAMD64;
