@@ -48,13 +48,13 @@ read_makeconf <- function() {
     pick_makeconf(lines, "CPPFLAGS")
   )), collapse = " ")
   list(
-    path = path,
+    # path = path,
     present = TRUE,
-    CC = pick_makeconf(lines, "CC"),
+    # CC = pick_makeconf(lines, "CC"),
     CFLAGS = pick_makeconf(lines, "CFLAGS"),
-    CXX = pick_makeconf(lines, "CXX"),
+    # CXX = pick_makeconf(lines, "CXX"),
     CXXFLAGS = pick_makeconf(lines, "CXXFLAGS"),
-    FC = pick_makeconf(lines, "FC"),
+    # FC = pick_makeconf(lines, "FC"),
     FFLAGS = pick_makeconf(lines, "FFLAGS"),
     LDFLAGS = pick_makeconf(lines, "LDFLAGS"),
     SHLIB_LDFLAGS = pick_makeconf(lines, "SHLIB_LDFLAGS"),
@@ -111,8 +111,8 @@ blas_lapack_info <- function() {
   list(
     env = as.list(env),
     session = list(
-      BLAS = tryCatch(unname(si$BLAS), error = function(e) NA_character_),
-      LAPACK = tryCatch(unname(si$LAPACK), error = function(e) NA_character_)
+      # BLAS = tryCatch(unname(si$BLAS), error = function(e) NA_character_),
+      # LAPACK = tryCatch(unname(si$LAPACK), error = function(e) NA_character_)
     )
   )
 }
@@ -140,7 +140,7 @@ compact_session_info <- function() {
   )
 }
 
-keys <- c("CC","CFLAGS","CXX","CXXFLAGS","FC","FFLAGS","LDFLAGS",
+keys <- c("CFLAGS","CXXFLAGS","FFLAGS","LDFLAGS",
           "CPPFLAGS","SAFE_FFLAGS","SAFE_CFLAGS","SAFE_CXXFLAGS","SHLIB_LDFLAGS")
 
 result <- list(
@@ -157,11 +157,11 @@ result <- list(
     version = R.version$version.string,
     major = R.version$major,
     minor = R.version$minor,
-    home = R.home(),
+    # home = R.home(),
     session = compact_session_info()
   ),
   capabilities = safe_capabilities(),
-  external_libraries = safe_extsoft(),
+  # external_libraries = safe_extsoft(),
   blas_lapack = blas_lapack_info(),
   makeconf = read_makeconf(),
   r_cmd_config = rcmd_config(keys)

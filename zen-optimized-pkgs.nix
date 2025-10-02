@@ -10,16 +10,24 @@
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
-        # bash bashNonInteractive
+        # bash bashNonInteractive ncurses diffutils findutils
 
-        perl # TODO: Perl still seems to be built anyways
+        nasm perl curl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
-#            ncurses  diffutils findutils
+        cmake tradcpp
+        adns tcl
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
         expat readline
         gnum4 pkg-config bison gettext texinfo
+
+        tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango asciidoc
+        fontforge fontconfig libXft
+        xorg # xorgproto libXt libX11
+        libtiff libjpeg
+
+        jdk # TODO: Optimize this?
 
         ncurses libssh2
         libpfm openssl bash-interactive
@@ -171,8 +179,29 @@ let
     });
 
     rOverlay = (final: prev: {
-        # TODO: That's not a lot
-        R = prev.R.override { blas = final.blas; lapack = final.lapack; };
+        R = (prev.R.override {
+            inherit (noOptimizePkgs)
+                perl ncurses curl readline texinfo bison jdk tzdata
+                texlive texliveSmall graphviz pango
+                libtiff libjpeg;
+            libX11 = noOptimizePkgs.xorg.libX11;
+            libXt = noOptimizePkgs.xorg.libXt;
+            inherit (final) blas lapack;
+
+            inherit (unoptimizedPkgs) stdenv gfortran; # TODO Because of LTO - TODO: Optimized? - match GCC version
+        })
+        .overrideAttrs (old: {
+            doCheck = false; # TODO: These have different flags in grDevices-Ex
+            env = (old.env or {}) // {
+                # Try to avoid test flakyness
+                OMP_NUM_THREADS        = "1";
+                OPENBLAS_NUM_THREADS   = "1";
+                BLIS_NUM_THREADS       = "1";
+                GOTO_NUM_THREADS       = "1";
+                VECLIB_MAXIMUM_THREADS = "1";
+                MKL_NUM_THREADS        = "1";
+            };
+          });
     });
 
     rustOverlay = (final: prev: rec {
@@ -223,6 +252,29 @@ let
     # ---------------------------------------------
     # Overrides follow (libraries)
     openBlasOverlay = (final: prev: rec {
+        aocl-utils = prev.aocl-utils.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/ao/aocl-utils/package.nix
+        };
+
+        amd-blis = prev.amd-blis.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix#L70
+            inherit (noOptimizePkgs) perl; # TODO: Python
+            blas64 = false; # TODO: check
+            withOpenMP = true; # TODO: check
+            withArchitecture = "zen${toString amdZenVersion}";
+            inherit (unoptimizedPkgs) stdenv; # TODO Because of LTO
+        };
+
+        amd-libflame = prev.amd-libflame.override {
+            # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix
+            inherit amd-blis aocl-utils;
+            inherit (noOptimizePkgs) cmake;
+            inherit (final) gfortran;
+            blas64 = false; # TODO: check
+            withOpenMP = true; # TODO: check
+            withAMDOpt = true;
+        };
+
         # https://search.nixos.org/packages?channel=unstable&show=openblas&query=openblas
         openblas = prev.openblas.override {
           # See https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/libraries/science/math/openblas/default.nix
@@ -233,10 +285,30 @@ let
           dynamicArch = false;  # prefer fixed-target
         };
 
-        # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
-        blas = prev.blas.override { blasProvider = openblas; };
-        # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
-        lapack = prev.lapack.override { lapackProvider = openblas; };
+        lapack-reference = prev.lapack-reference # AKA liblapack
+            .override {
+                # https://search.nixos.org/packages?channel=25.05&show=lapack-reference&query=liblapack
+                # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/la/lapack-reference/package.nix
+                inherit (final) gfortran;
+                inherit (noOptimizePkgs) cmake;
+                inherit (unoptimizedPkgs) stdenv; # TODO Because of LTO
+            };
+
+        blas = prev.blas.override {
+            # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
+            # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/bl/blas/package.nix
+            inherit openblas lapack-reference;
+            blasProvider = final.amd-blis;
+        };
+
+        # See also: la-pack https://github.com/ROCm/rocm-libraries
+
+        lapack = prev.lapack.override {
+            # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
+            # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/la/lapack/package.nix
+            inherit openblas lapack-reference;
+            lapackProvider = final.amd-libflame;
+        };
     });
 
     # TODO: OpenMP
@@ -253,26 +325,27 @@ in import importablePkgsDelegate rec {
        fortranOverlay
        goOverlay
        haskellOverlay
-       juliaOverlay
-       pythonOverlay
-       rOverlay
        rustOverlay
        zigOverlay
 
        openBlasOverlay
+
+       pythonOverlay
+       rOverlay
+       juliaOverlay
     ];
 
     config.replaceStdenv = { pkgs, ...}:
         let
-            baseStdenv = pkgs.gcc14Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+            baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
             stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
         in
             stenvAdapter.wrapStdenv {
                 inherit baseStdenv;
                 extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
                     "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
-                    "-flto=auto" "-fipa-icf" ];
-                extraCFlagsLink = [ "-flto=auto" ]; # TODO: Parameter mot yet picked up properly
+                    "-fipa-icf" ];
+                extraCFlagsLink = [ ]; # TODO: Parameter mot yet picked up properly
                 extraCPPFlagsCompile = [ "-DNDEBUG" ]; # TODO: Parameter mot yet picked up properly
                 extraLdFlags = [ "--as-needed" "--gc-sections" ];
                 extraHardeningDisable = [ "fortify" ]; # TODO: Parameter mot yet picked up properly

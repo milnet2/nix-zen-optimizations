@@ -52,8 +52,31 @@ The implementation covers the following languages:
 | Haskell               | Wrapped system `ghc` but recompiled with LLVM support a|
 * [yellow]#⚠# Test's don't really test anything
 | Julia                 |                                           | ❌ #Compile error#, tests disabled
-| R                     |                                           | ❌ #Compile error#, need to update test-assertions
+| R                     | Recompiled interpreter                    a|
+* ✅ Use Zen-optimized _BLAS_ and _LAPACK_
+* [yellow]#⚠# Many optimizations not applied to interpreter (compile error)
+* [yellow]#⚠# Test's don't really test anything
+* ❌ Nix `checkPhase` is disabled due to regressions
 | Zig                   |                                           | ❌ #Compile error#, #test is bullshit#
+|===
+
+=== Picked libraries
+
+The implementation use the following libraries:
+
+[cols="1,3,2"]
+|===
+|Library |Mechanism |Status
+
+| blas                  | provided through https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix[amd-blis]                   a|
+* Used by
+** _R_
+* Set to proper Zen-version
+* Uses unoptimized "parent" `CC`
+| lapack                | provided through https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix[amd-libflame]           a|
+* Used by
+** _R_
+* Uses optimized `CC` from above
 |===
 
 === Open work
@@ -63,11 +86,11 @@ The implementation covers the following languages:
 ** See also: https://github.com/NixOS/nixpkgs/blob/60a2d618f68142e2e697a7cec22c33212751d73a/pkgs/development/rocm-modules/6/llvm/default.nix#L182
 * OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
 * _gcc_ (and _binutils_) still seems to be built once I use Python :(
-* Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs): +
-The AMD fork of the BLIS library, with attribute amd-blis, extends BLIS with optimizations for modern AMD CPUs. The changes are usually submitted to the upstream BLIS project after some time. However, AMD BLIS typically provides some performance improvements on AMD Zen CPUs. The complementary AMD LIBFLAME library, with attribute amd-libflame, provides a LAPACK implementation.
+* Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs) everywhere (not only _R_)
 * Set default-args to the Python interpreter - like `-OO` `-X no_debug_ranges`
 * Don't build the bootstrap-packages
 * https://github.com/ROCm/TheRock
+* Optimize `jdk`
 
 === Run tests
 

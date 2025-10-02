@@ -16,6 +16,12 @@ Python::
 nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-python.test.nix
 ----
 
+R::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-r.test.nix
+----
+
 Rust::
 [source,shell]
 ----
