@@ -34,6 +34,8 @@
         xorg # xorgproto libXt libX11
         libtiff libjpeg
 
+        rocmPackages # I think, these typically use their own compiler (hipcc) anyways
+
         jdk # TODO: Optimize this?
 
         ncurses libssh2

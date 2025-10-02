@@ -2,7 +2,8 @@
 , lib
 , blas                  # e.g. pkgs.amd-blis (CPU build)
 , rocblas ? null        # e.g. pkgs.rocmPackages.rocblas (GPU build)
-, hip ? null            # e.g. pkgs.rocmPackages.hip (GPU build: provides hipcc/headers)
+, clr ? null                # GPU: e.g. pkgs.rocmPackages.clr (HIP runtime headers/libs)
+, hipcc ? null              # optional: pkgs.rocmPackages.hipcc
 , pkg-config ? null
 , isCpu ? true
 }:
@@ -13,27 +14,29 @@ let
       CFLAGS_EXTRA="$(pkg-config --cflags cblas 2>/dev/null || true)"
       LDLIBS_EXTRA="$(pkg-config --libs   cblas 2>/dev/null || echo "-lcblas -lblas")"
 
-      ${stdenv.cc.targetPrefix}cc -O3 -march=native -fopenmp \
-        $CFLAGS $CFLAGS_EXTRA \
-        -o build/blas-test-cpu \
-        main.c backend_cpu.c \
-        $LDFLAGS $LDLIBS_EXTRA
+      $CC -o build/blas-test-cpu main.c backend_cpu.c $CFLAGS_EXTRA $LDLIBS_EXTRA
     '';
-    buildGpu = ''
+    buildGpuCc = ''
+      echo "== GPU build with rocBLAS C-Compiler"
+      HIP_INCLUDES="-I${clr}/include"
+      ROCBLAS_INCLUDES="-I${rocblas}/include"
+
+      echo "HIP_INCLUDES=$HIP_INCLUDES"
+      echo "ROCBLAS_INCLUDES=$ROCBLAS_INCLUDES"
+
+      $CC -o build/blas-test-gpu main.c backend_gpu.c $HIP_INCLUDES $ROCBLAS_INCLUDES -L${rocblas}/lib -lrocblas -L${clr}/lib -lamdhip64 -D__HIP_PLATFORM_AMD__=1
+    '';
+    buildGpuHip = ''
       echo "== GPU build with rocBLAS/HIP"
       # Prefer hipcc for correct ROCm link args. Treat sources as C++.
-      HIPCC=${hip}/bin/hipcc
 
-      "$HIPCC" -O3 -std=c++17 \
-        -o build/blas-test-gpu \
-        -x c++ main.c backend_gpu.c \
-        -I${hip}/include -I${rocblas}/include \
-        -L${rocblas}/lib -lrocblas
-
-      # If you prefer gcc/clang instead of hipcc, you could do:
-      # ${stdenv.cc.targetPrefix}cc -O3 -o build/blas-test-gpu \
-      #   main.c backend_gpu.c -I${hip}/include -I${rocblas}/include \
-      #   -L${rocblas}/lib -lrocblas -L${hip}/lib -lamdhip64
+      ${lib.getExe' hipcc "hipcc"} -O3 -std=c++17 -x c++ \
+                -I${clr}/include -I${rocblas}/include \
+                -L${rocblas}/lib -lrocblas \
+                -L${clr}/lib -lamdhip64 \
+                -D__HIP_PLATFORM_AMD__=1 \
+                -o build/blas-test-gpu \
+                main.c backend_gpu.c
     '';
 in
 stdenv.mkDerivation {
@@ -45,7 +48,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [ pkg-config ];
 
   buildInputs =
-    (if isCpu then [ blas ] else [ rocblas hip ]);
+    (if isCpu then [ blas ] else [ rocblas clr ]);
 
   # Name artifact differently so you can install both variants
   # (optional; you can keep a single name if you prefer)
@@ -59,7 +62,7 @@ stdenv.mkDerivation {
 
     mkdir -p build
     '' +
-    ( if isCpu then buildCpu else buildGpu) +
+    (if isCpu then buildCpu else (if (hipcc != null) then buildGpuHip else buildGpuCc)) +
     ''
 
     runHook postBuild

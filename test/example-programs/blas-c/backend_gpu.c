@@ -67,28 +67,28 @@ double blas_sgemm(BlasHandle* h,
 
   // Warmup
   rocblas_check(
-    rocblas_sgemm(h->handle,
-                  rocblas_operation_none, rocblas_operation_none,
-                  h->M, h->N, h->K,
-                  &alpha,
-                  h->dA, h->K,
-                  h->dB, h->N,
-                  &beta,
-                  h->dC, h->N),
+        rocblas_sgemm(h->handle,
+                      rocblas_operation_none, rocblas_operation_none,
+                      /* m */ N, /* n */ M, /* k */ K,
+                      &alpha,
+                      /* A */ h->dB, /* lda */ N,
+                      /* B */ h->dA, /* ldb */ K,
+                      &beta,
+                      /* C */ h->dC, /* ldc */ N),
     "sgemm warmup");
   hip_check(hipDeviceSynchronize(), "sync warmup");
 
   double t0 = now_sec();
   for (int r = 0; r < repeats; ++r) {
     rocblas_check(
-      rocblas_sgemm(h->handle,
-                    rocblas_operation_none, rocblas_operation_none,
-                    h->M, h->N, h->K,
-                    &alpha,
-                    h->dA, h->K,
-                    h->dB, h->N,
-                    &beta,
-                    h->dC, h->N),
+        rocblas_sgemm(h->handle,
+                      rocblas_operation_none, rocblas_operation_none,
+                      /* m */ N, /* n */ M, /* k */ K,
+                      &alpha,
+                      /* A */ h->dB, /* lda */ N,
+                      /* B */ h->dA, /* ldb */ K,
+                      &beta,
+                      /* C */ h->dC, /* ldc */ N),
       "sgemm");
   }
   hip_check(hipDeviceSynchronize(), "sync");

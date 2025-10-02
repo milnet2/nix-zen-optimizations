@@ -18,6 +18,23 @@ Problem: M=4096 N=4096 K=4096  repeats=100  (~192.0 MB)
 Time: 23.435 s   Perf: 586.46 GFLOP/s   Checksum: -2304.952393
 ----
 
+CAUTION:: Ensure the bls-kernel is available by running `/nix/store/xaqbdlsfllp4mnh6vx6vbppxfad44dva-rocblas-6.3.3/` and looking this up in
+"_/nix/store/*-rocblas-6.3.3/lib/rocblas/library/_"
+
+GPU (CC)::
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { isCpu = false; rocblas = rocmPackages.rocblas; clr = rocmPackages.clr; }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+GPU (HIP)::
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { isCpu = false; rocblas = rocmPackages.rocblas; hipcc = rocmPackages.hipcc; clr = rocmPackages.clr; }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
 === Using Optimized Nix (with Zen optimizations)
 
 To build the program with the optimized Nix setup from this repository:
@@ -34,4 +51,18 @@ Example output:
 ----
 Problem: M=4096 N=4096 K=4096  repeats=100  (~192.0 MB)
 Time: 24.693 s   Perf: 556.60 GFLOP/s   Checksum: -2304.965576
+----
+
+GPU (CC)::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { isCpu = false; rocblas = rocmPackages.rocblas; clr = rocmPackages.clr; }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+GPU (HIP)::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { isCpu = false; rocblas = rocmPackages.rocblas; hipcc = rocmPackages.hipcc; clr = rocmPackages.clr; }' && \
+./result/bin/blas-test 4096 4096 100
 ----
