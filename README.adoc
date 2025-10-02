@@ -40,7 +40,8 @@ The implementation covers the following languages:
 | C++                   | Wrapper-script around system `gcc`        a|
 * [yellow]#⚠# Not all optimizations applied properly
 * ✅ tests pass - #double check#
-| Go                    |                                           | ❌ #Compile error#, tests disabled
+| Go                    | Wrapper-script around system `go` and `buildGoModule` setting `GOAMD64`  a|
+* ✅ tests pass
 | Rust                  | Wrapper-script around system `rustc` and `cargo` a|
 * ✅ tests pass
 | Python 3 (minimal)    | Interpreter compiled with optimizations   a|

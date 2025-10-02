@@ -11,13 +11,9 @@ buildGoModule {
 
   # Ensure we're using the optimized compiler flags
   buildPhase = ''
-    # Log the go build command for debugging
-    echo "go build -o buildinfo buildinfo.go" > buildinfo.log
+    echo "Build using $(readlink -f $(command -v go))"
 
-    # Build the Go program
-    go build -o buildinfo buildinfo.go
-
-    # Run the program to generate the JSON output
+    go build -ldflags="-X 'main.goamd64=$(go env GOAMD64)' -X 'main.goflags=$(go env GOFLAGS)'" -o buildinfo buildinfo.go
     ./buildinfo > buildinfo.json
   '';
 
@@ -25,11 +21,11 @@ buildGoModule {
     mkdir -p $out/bin
     cp buildinfo $out/bin/
     mkdir -p $out/lib
-    cp buildinfo.log $out/lib
     cp buildinfo.json $out/lib
   '';
 
   meta = {
     description = "A Go program that prints build information in JSON format";
+    platforms = [ "x86_64-linux" ];
   };
 }
