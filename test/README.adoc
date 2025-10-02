@@ -20,6 +20,12 @@ nix run --no-write-lock-file github:nix-community/nix-unit -- ../zen-optimized-p
 [[test-individual]]
 === Run individually
 
+C::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-c.test.nix
+----
+
 Go::
 [source,shell]
 ----

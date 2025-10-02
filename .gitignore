@@ -4,3 +4,4 @@
 *.swo
 a.out
 result
+cmake-build-debug
