@@ -144,20 +144,6 @@ let
         };
     });
 
-    juliaOverlay = (final: prev: {
-        julia = prev.julia.overrideAttrs (old: {
-          # TODO
-          # https://search.nixos.org/packages?channel=unstable&show=julia&query=julia
-          # See https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/compilers/julia/generic.nix
-          # Many channels expose these through make flags/env:
-          # Aim to set a native/znver* target and link OpenBLAS Zen
-          buildInputs = (old.buildInputs or []) ++ [ final.openblas ]; # There's an openblas override
-          makeFlags = (old.makeFlags or []) ++ [
-            "USE_BINARYBUILDER=0"    # build against Nix libs instead of prebuilt
-          ];
-        });
-    });
-
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
         python3 = (basePythonPackage prev).override {
@@ -341,7 +327,6 @@ in import importablePkgsDelegate rec {
 
        pythonOverlay
        rOverlay
-       juliaOverlay
     ];
 
     config.replaceStdenv = { pkgs, ...}:

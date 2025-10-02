@@ -52,7 +52,6 @@ The implementation covers the following languages:
 * ✅ tests pass
 | Haskell               | Wrapped system `ghc` but recompiled with LLVM support a|
 * [yellow]#⚠# Test's don't really test anything
-| Julia                 |                                           | ❌ #Compile error#, tests disabled
 | R                     | Recompiled interpreter                    a|
 * ✅ Use Zen-optimized _BLAS_ and _LAPACK_
 * [yellow]#⚠# Many optimizations not applied to interpreter (compile error)
