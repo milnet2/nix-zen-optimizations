@@ -57,7 +57,6 @@ The implementation covers the following languages:
 * [yellow]#⚠# Many optimizations not applied to interpreter (compile error)
 * [yellow]#⚠# Test's don't really test anything
 * ❌ Nix `checkPhase` is disabled due to regressions
-| Zig                   |                                           | ❌ #Compile error#, #test is bullshit#
 |===
 
 === Picked libraries

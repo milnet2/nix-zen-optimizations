@@ -231,19 +231,6 @@ let
         };}
     );
 
-    zigOverlay = (final: prev: {
-        zig = prev.symlinkJoin {
-            # https://search.nixos.org/packages?channel=unstable&show=zig&query=zig
-            name = "zig-${optimizedPlatform.platform.gcc.tune}";
-            paths = [ prev.zig ];
-            buildInputs = [ prev.makeWrapper ];
-            postBuild = ''
-                wrapProgram $out/bin/zig --set-default ZIG_GLOBAL_ARGS "-mcpu=${optimizedPlatform.platform.gcc.tune}"
-            '';
-        };}
-    );
-
-
     # ---------------------------------------------
     # Overrides follow (libraries)
     openBlasOverlay = (final: prev: rec {
@@ -321,7 +308,6 @@ in import importablePkgsDelegate rec {
        goOverlay
        haskellOverlay
        rustOverlay
-       zigOverlay
 
        openBlasOverlay
 
