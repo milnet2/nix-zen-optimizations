@@ -14,7 +14,7 @@ You can run it using:
 
 [source,shell]
 ----
-nix run --no-write-lock-file github:nix-community/nix-unit -- ../zen-optimized-pkgs.test.nix
+nix run --no-write-lock-file github:nix-community/nix-unit -- --log-format bar ../zen-optimized-pkgs.test.nix
 ----
 
 [[test-individual]]
