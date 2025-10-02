@@ -1,7 +1,23 @@
 == Optimization tests
 
-These tests are also picked up in the test-suites a level up
+Tests are based on https://github.com/nix-community/nix-unit (https://nix-community.github.io/nix-unit/).
 
+The tests try to build small example programs using the optimized compilers/interpreters and to obtain build-info from these.
+
+=== Rune entire test-suite
+
+The <<test-individual>> are bundled into a test-suite covering all tests.
+
+NOTE:: It's best to run them twice to better see the output.
+
+You can run it using:
+
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ../zen-optimized-pkgs.test.nix
+----
+
+[[test-individual]]
 === Run individually
 
 Go::

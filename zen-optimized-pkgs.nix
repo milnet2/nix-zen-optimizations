@@ -1,13 +1,20 @@
-# Provides a `pkgs` for optimized code
+# Provides a `pkgs` for optimized code.
+
+# See documentation at docu/zen-optimized-pkgs.adoc
+# See documentation at docu/zen-optimized-pkgs.adoc
+# See documentation at docu/zen-optimized-pkgs.adoc
+
+# tag::header[]
 {
     importablePkgsDelegate ? <nixpkgs>, # The optimized packages will be based on this
     unoptimizedPkgs ? (import importablePkgsDelegate {}), # This is a `pkgs`. If we want a package without optimizations we'll pull it from here
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
-    ltoLevel ? "thin", # Param 'thin' has only effect on LLVM - gcc uses its own LTO
+    isLtoEnabled ? false, # Be careful with that: It will easily break stuff
     optimizationParameter ? "-O3",
     basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
+# end::header[]
         # CAUTION: Be careful what you add here. If it transitively pulls in stuff from unoptimizedPkgs.pkgs
         # The build will fail. ... At the very end :(
         # bash bashNonInteractive ncurses diffutils findutils
@@ -61,8 +68,7 @@ let
                 # https://rustc-dev-guide.rust-lang.org/building/optimized-build.html
                 rustcTarget = "x86_64-unknown-linux-gnu";
                 cargoShortTarget = "x86_64-unknown-linux-gnu";
-                lto = ltoLevel;
-            };
+            } // (if isLtoEnabled then { lto = "thin"; } else {}) ;
         };
     };
 
@@ -96,7 +102,7 @@ let
                     --set GOOS "${optimizedPlatform.platform.go.GOOS}" \
                     --set GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
                     --set GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
-                    --set-default CGO_CFLAGS "${optimizationParameter} -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune} -flto=auto -fipa-icf" \
+                    --set-default CGO_CFLAGS "${optimizationParameter} -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-flto=auto" else ""} -fipa-icf" \
                     --set-default CGO_LDFLAGS "--as-needed --gc-sections"
                '';
         } // {
@@ -144,24 +150,10 @@ let
         };
     });
 
-    juliaOverlay = (final: prev: {
-        julia = prev.julia.overrideAttrs (old: {
-          # TODO
-          # https://search.nixos.org/packages?channel=unstable&show=julia&query=julia
-          # See https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/compilers/julia/generic.nix
-          # Many channels expose these through make flags/env:
-          # Aim to set a native/znver* target and link OpenBLAS Zen
-          buildInputs = (old.buildInputs or []) ++ [ final.openblas ]; # There's an openblas override
-          makeFlags = (old.makeFlags or []) ++ [
-            "USE_BINARYBUILDER=0"    # build against Nix libs instead of prebuilt
-          ];
-        });
-    });
-
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
         python3 = (basePythonPackage prev).override {
-            enableLTO = true;
+            enableLTO = isLtoEnabled;
             enableOptimizations = true; # Makes build non-reproducible!! # TODO: Enable "preferLocalBuild" setting
             reproducibleBuild = false; # only disables tests
 
@@ -220,7 +212,7 @@ let
            buildInputs = [ unoptimizedPkgs.makeWrapper ];
            postBuild = ''
                wrapProgram $out/bin/rustc \
-                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""} -C codegen-units=1"
            '';
         } // {
             inherit (unoptimizedPkgs.rustc) badTargetPlatforms;
@@ -235,7 +227,7 @@ let
             buildInputs = [ unoptimizedPkgs.makeWrapper ];
             postBuild = ''
                 wrapProgram $out/bin/cargo \
-                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} -C lto=${optimizedPlatform.platform.rust.lto} -C codegen-units=1"
+                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""}  -C codegen-units=1"
             '';
         } // {
             inherit (prev.cargo) badTargetPlatforms;
@@ -244,19 +236,6 @@ let
             targetPlatforms = [ optimizedPlatform.platform ];
         };}
     );
-
-    zigOverlay = (final: prev: {
-        zig = prev.symlinkJoin {
-            # https://search.nixos.org/packages?channel=unstable&show=zig&query=zig
-            name = "zig-${optimizedPlatform.platform.gcc.tune}";
-            paths = [ prev.zig ];
-            buildInputs = [ prev.makeWrapper ];
-            postBuild = ''
-                wrapProgram $out/bin/zig --set-default ZIG_GLOBAL_ARGS "-mcpu=${optimizedPlatform.platform.gcc.tune}"
-            '';
-        };}
-    );
-
 
     # ---------------------------------------------
     # Overrides follow (libraries)
@@ -335,13 +314,11 @@ in import importablePkgsDelegate rec {
        goOverlay
        haskellOverlay
        rustOverlay
-       zigOverlay
 
        openBlasOverlay
 
        pythonOverlay
        rOverlay
-       juliaOverlay
     ];
 
     config.replaceStdenv = { pkgs, ...}:

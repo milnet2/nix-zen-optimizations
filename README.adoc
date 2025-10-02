@@ -1,10 +1,6 @@
 == Compile programs optimized for Zen using nix
 
-Contains facilities for installing programs on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
-
-----
-⚠⚠⚠ The repo is currently *mostly broken* ⚠⚠⚠
-----
+Contains facilities for building packages on https://nixos.org/[Nix-based] *Linux* systems with an AMD Ryzen CPU.
 
 The intended use of it is through an "alternative" `pkgs` from the system like:
 
@@ -13,18 +9,31 @@ The intended use of it is through an "alternative" `pkgs` from the system like:
 # Where this would be your regular one
 pkgs = import <nixpkgs> {};
 
-# There can be an additional
+# There can be an additional (short variant):
 pkgsTuned = import ./zen-optimized-pkgs.nix {
-    inherit  lib;
     importablePkgsDelegate = <nixpkgs>;
     amdZenVersion = 2;
-    ltoLevel = "thin"; };
+    };
 ----
 
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
 
-CAUTION:: I'm no expert in this so the approaches may be unorthodox or not work properly.
-    I've added some tests which seem to work, though.
+See xref:docu/zen-optimized-pkgs.adoc[] for the full description of parameters.
+
+=== Disclaimer
+
+Here is why you should *not* use the repo:
+
+* The repo is *unmaintained!* - I've just not the time to take care of it
+** I thought it was easier - it's not - things will break quite easily. Expect to invest quite some time.
+** There's still a lot missing / not optimized - see also https://github.com/milnet2/nix-zen-optimizations/issues[issues]
+* There are likely better alternatives - check out
+** Specific OCI/Docker images for the stuff you'll want optimized
+** Official https://github.com/ROCm/TheRock[AMD TheRock] which also has Docker-images as basis
+** Nix packages under `pkgs.rocmPackages` and where it's from https://github.com/nixos-rocm/nixos-rocm[nixos-rocm (now obsolete)]
+* You'll be compiling a lot - think twice if it's worth it
+
+
 
 === Covered languages
 
@@ -52,13 +61,11 @@ The implementation covers the following languages:
 * ✅ tests pass
 | Haskell               | Wrapped system `ghc` but recompiled with LLVM support a|
 * [yellow]#⚠# Test's don't really test anything
-| Julia                 |                                           | ❌ #Compile error#, tests disabled
 | R                     | Recompiled interpreter                    a|
 * ✅ Use Zen-optimized _BLAS_ and _LAPACK_
 * [yellow]#⚠# Many optimizations not applied to interpreter (compile error)
 * [yellow]#⚠# Test's don't really test anything
 * ❌ Nix `checkPhase` is disabled due to regressions
-| Zig                   |                                           | ❌ #Compile error#, #test is bullshit#
 |===
 
 === Picked libraries
@@ -79,26 +86,3 @@ The implementation use the following libraries:
 ** _R_
 * Uses optimized `CC` from above
 |===
-
-=== Open work
-
-* Properly use `lto`
-* Use the _ROCM_ packages
-** See also: https://github.com/NixOS/nixpkgs/blob/60a2d618f68142e2e697a7cec22c33212751d73a/pkgs/development/rocm-modules/6/llvm/default.nix#L182
-* OpenMP - https://github.com/NixOS/nixpkgs/issues/79818
-* _gcc_ (and _binutils_) still seems to be built once I use Python :(
-* Use AMD BLIS/LIBFLAME (optimized for modern AMD x86_64 CPUs) everywhere (not only _R_)
-* Set default-args to the Python interpreter - like `-OO` `-X no_debug_ranges`
-* Don't build the bootstrap-packages
-* https://github.com/ROCm/TheRock
-* Optimize `jdk`
-
-=== Run tests
-
-Tests compile simple programs (xref:test/example-programs/README.adoc[]) in the individual languages and inspect their output.
-To execute all the tests run:
-
-[source,shell]
-----
-nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
-----
