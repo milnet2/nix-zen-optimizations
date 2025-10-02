@@ -69,4 +69,33 @@ in {
                 avx512vnni = isAvx512Expected;
             };
         };
+
+        "BLAS implementations" = {
+            "test AMD BLIS on CPU" = {
+                expr = let
+                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = true; };
+                    testExecution = pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
+                    testResult = (builtins.readFile "${testExecution}/lib/result.log");
+                in builtins.match "Engine: BLIS:.*" testResult != null;
+                expected = true;
+            };
+
+            "test AMD rocBLAS on GPU (hipcc)" = {
+                expr = let
+                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; hipcc = pkgsTuned.rocmPackages.hipcc; clr = pkgsTuned.rocmPackages.clr; };
+                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
+                    testResult = (builtins.readFile "${testExecution}/lib/result.log");
+                in builtins.match "Engine: rocBLAS.*" testResult != null;
+                expected = true;
+            };
+
+            "test AMD rocBLAS on GPU (regular CC)" = {
+                expr = let
+                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; clr = pkgsTuned.rocmPackages.clr; };
+                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
+                    testResult = (builtins.readFile "${testExecution}/lib/result.log");
+                in builtins.match "Engine: rocBLAS.*" testResult != null;
+                expected = true;
+            };
+        };
 }

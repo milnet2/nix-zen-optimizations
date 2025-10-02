@@ -112,6 +112,9 @@ size_t blas_get_engine_info(char* buf, size_t len) {
   if (!buf || len == 0) return 0;
   buf[0] = '\0';
 
+  snprintf(buf, len, "rocBLAS ");
+  buf += 8;
+
   // rocBLAS version string
   size_t need = 0;
   if (rocblas_get_version_string_size(&need) == rocblas_status_success && need > 0) {
