@@ -2,6 +2,23 @@
 
 A simple long-running BLAS job needing not a lot of memory.
 
+- Performs multiple single-precision matrix multiplication (`SGEMM`): C = A × B with row-major layout, no transposes, alpha=1, beta=0.
+- Repeats the `GEMM` operation a configurable number of times and measures only the time spent inside the GEMM calls.
+- Supports a CPU backend (CBLAS via OpenBLAS/BLIS/MKL) and an optional GPU backend (rocBLAS/HIP). The backend is selected at build time via the Nix attributes (`isCpu`) and available libraries.
+
+Example JSON result:
+
+[source,json]
+----
+{
+  "engine": {"name":"BLIS","version":"..."},
+  "input": {"M":4096,"N":4096,"K":4096,"repeats":100,"expected_bytes_total":201326592,"expected_megabytes_total":192.0},
+  "output": {"time_sec": 23.435000, "gflops": 586.46, "checksum": -2304.952393}
+}
+----
+
+On failures (e.g., when a GPU handle cannot be created), the program still prints a JSON object with an "error" field along with the input and engine information.
+
 === Building with Nix
 
 CPU::
