@@ -25,37 +25,37 @@ static float checksum(const float* M, int n) {
   return (float)s;
 }
 
-// Minimal JSON string escaper for engine string
-static void json_escape(const char* in, char* out, size_t out_len) {
-  if (!in || !out || out_len == 0) return;
-  size_t j = 0;
-  for (size_t i = 0; in[i] != '\0' && j + 1 < out_len; ++i) {
-    unsigned char c = (unsigned char)in[i];
-    if (c == '"' || c == '\\') {
-      if (j + 2 >= out_len) break;
-      out[j++] = '\\'; out[j++] = (char)c;
-    } else if (c == '\n') {
-      if (j + 2 >= out_len) break;
-      out[j++] = '\\'; out[j++] = 'n';
-    } else if (c == '\r') {
-      if (j + 2 >= out_len) break;
-      out[j++] = '\\'; out[j++] = 'r';
-    } else if (c == '\t') {
-      if (j + 2 >= out_len) break;
-      out[j++] = '\\'; out[j++] = 't';
-    } else if (c < 0x20) {
-      // control character -> skip or encode as space
-      if (j + 6 >= out_len) break;
-      // simple \u00XX encoding
-      static const char hex[] = "0123456789abcdef";
-      out[j++] = '\\'; out[j++] = 'u'; out[j++] = '0'; out[j++] = '0';
-      out[j++] = hex[(c >> 4) & 0xF];
-      out[j++] = hex[c & 0xF];
-    } else {
-      out[j++] = (char)c;
-    }
+static void print_json_results(char* engine, int N, int M, int K, int repeats, char* error, double secs, float checksum) {
+  size_t szA = (size_t)M*K*sizeof(float);
+  size_t szB = (size_t)K*N*sizeof(float);
+  size_t szC = (size_t)M*N*sizeof(float);
+
+  double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
+  unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
+  double gflops = (2.0 * (double)M * (double)N * (double)K * repeats) / (secs * 1e9);
+
+  printf("{\n");
+  printf("  \"engine\": %s,\n", engine);
+  printf("  \"input\": {\n");
+  printf("    \"M\": %d,\n", M);
+  printf("    \"N\": %d,\n", N);
+  printf("    \"K\": %d,\n", K);
+  printf("    \"repeats\": %d,\n", repeats);
+  printf("    \"expected_bytes_total\": %llu,\n", total_bytes);
+  printf("    \"expected_megabytes_total\": %.1f\n", total_mb);
+  printf("  },\n");
+  if (error != NULL) {
+    printf("  \"error\": \"%s\"\n", error);
   }
-  out[j] = '\0';
+  if (secs > 0.0) {
+    printf("  \"output\": {\n");
+    printf("    \"time_sec\": %.6f,\n", secs);
+    printf("    \"gflops\": %.2f,\n", gflops);
+    printf("    \"checksum\": %.6f\n", checksum);
+    printf("  }\n");
+  }
+  printf("}\n");
+
 }
 
 int main(int argc, char** argv) {
@@ -88,18 +88,7 @@ int main(int argc, char** argv) {
   BlasHandle* h = blas_init(M, N, K);
   if (!h) {
     // Initialization failed: still print JSON result including engine
-    double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
-    unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
-    printf("{\n");
-    printf("  \"engine\": %s,\n", eng);
-    printf("  \"M\": %d,\n", M);
-    printf("  \"N\": %d,\n", N);
-    printf("  \"K\": %d,\n", K);
-    printf("  \"repeats\": %d,\n", repeats);
-    printf("  \"bytes_total\": %llu,\n", total_bytes);
-    printf("  \"megabytes_total\": %.1f,\n", total_mb);
-    printf("  \"error\": \"blas_init failed\"\n");
-    printf("}\n");
+    print_json_results(eng, N, M, K, repeats, "blas_init failed", -1.0, 0.0f);
     free(A); free(B); free(C);
     return 2;
   }
@@ -107,46 +96,17 @@ int main(int argc, char** argv) {
   // Time *just* the GEMM loop; init/finalize are excluded.
   double secs = blas_sgemm(h, A, B, C, M, N, K, repeats);
 
-  // Common bytes info
-  double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
-  unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
-
   if (secs < 0.0) {
     // GEMM failed during execution: still print JSON result including engine
-    printf("{\n");
-    printf("  \"engine\": %s,\n", eng);
-    printf("  \"M\": %d,\n", M);
-    printf("  \"N\": %d,\n", N);
-    printf("  \"K\": %d,\n", K);
-    printf("  \"repeats\": %d,\n", repeats);
-    printf("  \"bytes_total\": %llu,\n", total_bytes);
-    printf("  \"megabytes_total\": %.1f,\n", total_mb);
-    printf("  \"error\": \"sgemm failed\"\n");
-    printf("}\n");
-
+    print_json_results(eng, N, M, K, repeats, "sgemm failed", -1.0, 0.0f);
     blas_finalize(h);
     free(A); free(B); free(C);
     return 3;
+  } else {
+    float csum = checksum(C, M*N);
+    print_json_results(eng, N, M, K, repeats, NULL, secs, csum);
+    blas_finalize(h);
+    free(A); free(B); free(C);
   }
-
-  double gflops = (2.0 * (double)M * (double)N * (double)K * repeats) / (secs * 1e9);
-  float csum = checksum(C, M*N);
-
-  // Output JSON
-  printf("{\n");
-  printf("  \"engine\": %s,\n", eng);
-  printf("  \"M\": %d,\n", M);
-  printf("  \"N\": %d,\n", N);
-  printf("  \"K\": %d,\n", K);
-  printf("  \"repeats\": %d,\n", repeats);
-  printf("  \"bytes_total\": %llu,\n", total_bytes);
-  printf("  \"megabytes_total\": %.1f,\n", total_mb);
-  printf("  \"time_sec\": %.6f,\n", secs);
-  printf("  \"gflops\": %.2f,\n", gflops);
-  printf("  \"checksum\": %.6f\n", csum);
-  printf("}\n");
-
-  blas_finalize(h);
-  free(A); free(B); free(C);
   return 0;
 }
