@@ -1,0 +1,38 @@
+== BLAS example program (Python)
+
+A simple long-running BLAS job implemented in Python using NumPy.
+
+- Performs multiple single-precision matrix multiplications (SGEMM): C = A × B with column-major (Fortran) arrays, no transposes, alpha=1, beta=0.
+- Repeats the GEMM operation a configurable number of times and measures only the time spent inside the GEMM calls.
+- CPU backend via the BLAS provider that NumPy is linked against (e.g., OpenBLAS, BLIS, MKL).
+
+Example JSON result:
+
+[source,json]
+----
+{
+  "engine": {"name":"NumPy","version":"..."},
+  "input": {"M":4096,"N":4096,"K":4096,"repeats":100,"expected_bytes_total":201326592,"expected_megabytes_total":192.0},
+  "output": {"time_sec": 23.435000, "gflops": 586.46, "checksum": -2304.952393}
+}
+----
+
+=== Building with Nix
+
+CPU (NumPy/BLAS)::
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+CPU::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { }' && \
+./result/bin/blas-test 4096 4096 100
+----
