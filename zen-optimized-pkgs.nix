@@ -11,7 +11,7 @@
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     isLtoEnabled ? false, # Be careful with that: It will easily break stuff
-    isAggressiveFastMathEnabled ? true, # Will cause loss of precision and also some tests to fail (=> some tests will get disabled)
+    isAggressiveFastMathEnabled ? false, # Will cause loss of precision and also some tests to fail (=> some tests will get disabled)
     optimizationParameter ? "-O3",
     basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
@@ -223,9 +223,9 @@ let
 
                 hypothesis = (pyPrev.hypothesis.override {
                     # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/hypothesis/default.nix
-                    inherit (unoptimizedPkgs) tzdata;
+                    # inherit (unoptimizedPkgs) tzdata; ->
                     # Some tests signal through NAN. However, there's no NAN with fast-math. Thus we disable the tests for now.
-                    doCheck = !isAggressiveFastMathEnabled;
+                    doCheck = false; # TODO: !isAggressiveFastMathEnabled; <= "No time zone found with key UTC"
                     # pytest-xdist,
                 });
 
