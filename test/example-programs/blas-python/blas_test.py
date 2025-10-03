@@ -3,6 +3,8 @@ import json
 import math
 import sys
 import time
+import os
+import argparse
 
 try:
     import numpy as np
@@ -11,6 +13,13 @@ except Exception as e:
         "engine": {"name": "Python", "version": sys.version.split()[0]},
         "error": f"Failed to import numpy: {e}"}), file=sys.stdout)
     sys.exit(1)
+
+# Optional GPU backend via PyTorch (CUDA/ROCm). We import lazily and
+# only use it if requested and available.
+try:
+    import torch  # type: ignore
+except Exception:
+    torch = None  # sentinel; handled at runtime
 
 
 def init_matrix(rows: int, cols: int, seed: int) -> np.ndarray:
@@ -27,10 +36,16 @@ def init_matrix(rows: int, cols: int, seed: int) -> np.ndarray:
     return out
 
 
-def checksum(arr: np.ndarray) -> float:
-    # Accumulate in float64 for stability, return float32-like value to match others
-    s = float(np.sum(arr, dtype=np.float64))
-    return s
+def checksum_np(arr: np.ndarray) -> float:
+    # Accumulate in float64 for stability
+    return float(np.sum(arr, dtype=np.float64))
+
+
+def checksum_torch(t: "torch.Tensor") -> float:
+    # Sum on device, then transfer scalar to host as float
+    if torch is None:
+        raise RuntimeError("Torch backend requested but torch not available")
+    return float(t.sum(dtype=t.dtype).detach().cpu().item())
 
 
 def print_json(engine_name: str, engine_version: str, M: int, N: int, K: int, repeats: int,
@@ -73,9 +88,16 @@ def print_json(engine_name: str, engine_version: str, M: int, N: int, K: int, re
 
 
 def main(argv: list[str]) -> int:
-    N = int(argv[1]) if len(argv) > 1 else 2048
-    K = int(argv[2]) if len(argv) > 2 else 2048
-    repeats = int(argv[3]) if len(argv) > 3 else 50
+    parser = argparse.ArgumentParser(description="BLAS SGEMM benchmark (Python)")
+    parser.add_argument("N", nargs="?", type=int, default=2048)
+    parser.add_argument("K", nargs="?", type=int, default=2048)
+    parser.add_argument("repeats", nargs="?", type=int, default=50)
+    parser.add_argument("--backend", choices=["auto", "cpu", "gpu"], default=os.environ.get("BLAS_BACKEND", "auto"))
+    args = parser.parse_args(argv[1:])
+
+    N = args.N
+    K = args.K
+    repeats = args.repeats
 
     if N <= 0 or K <= 0 or repeats <= 0:
         print("Usage: blas-test [N] [K] [repeats]", file=sys.stderr)
@@ -83,26 +105,62 @@ def main(argv: list[str]) -> int:
 
     M = N
 
-    # Create Fortran-contiguous arrays so NumPy/BLAS can use SGEMM efficiently
-    A = np.asfortranarray(init_matrix(M, K, 1), dtype=np.float32)
-    B = np.asfortranarray(init_matrix(K, N, 2), dtype=np.float32)
-    C = np.asfortranarray(np.zeros((M, N), dtype=np.float32))
-
-    engine_name = "NumPy"
-    engine_version = getattr(np, "__version__", "")
-
-    # Warmup
-    np.matmul(A, B, out=C)
-
-    t0 = time.perf_counter()
-    for _ in range(repeats):
+    # CPU path (NumPy/BLAS)
+    def run_cpu():
+        A = np.asfortranarray(init_matrix(M, K, 1), dtype=np.float32)
+        B = np.asfortranarray(init_matrix(K, N, 2), dtype=np.float32)
+        C = np.asfortranarray(np.zeros((M, N), dtype=np.float32))
+        # Warmup
         np.matmul(A, B, out=C)
-    t1 = time.perf_counter()
+        t0 = time.perf_counter()
+        for _ in range(repeats):
+            np.matmul(A, B, out=C)
+        t1 = time.perf_counter()
+        secs = t1 - t0
+        csum = checksum_np(C)
+        print_json("NumPy", getattr(np, "__version__", ""), M, N, K, repeats, None, secs, csum)
 
-    secs = t1 - t0
-    csum = checksum(C)
+    # GPU path (PyTorch CUDA/ROCm)
+    def run_gpu():
+        if torch is None:
+            print_json("PyTorch", "", M, N, K, repeats, "torch not available", None, None)
+            return
+        if not torch.cuda.is_available():
+            print_json("PyTorch", getattr(torch, "__version__", ""), M, N, K, repeats, "torch.cuda not available", None, None)
+            return
+        device = torch.device("cuda")
+        dtype = torch.float32
+        # Prepare host arrays using same generator for determinism
+        A_h = init_matrix(M, K, 1).astype(np.float32, copy=False)
+        B_h = init_matrix(K, N, 2).astype(np.float32, copy=False)
+        # Upload once
+        A = torch.from_numpy(np.ascontiguousarray(A_h)).to(device=device, dtype=dtype)
+        B = torch.from_numpy(np.ascontiguousarray(B_h)).to(device=device, dtype=dtype)
+        # Output buffer
+        C = torch.empty((M, N), device=device, dtype=dtype)
+        # Warmup
+        torch.matmul(A, B, out=C)
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        for _ in range(repeats):
+            torch.matmul(A, B, out=C)
+        torch.cuda.synchronize()
+        t1 = time.perf_counter()
+        secs = t1 - t0
+        csum = checksum_torch(C)
+        print_json("PyTorch", getattr(torch, "__version__", ""), M, N, K, repeats, None, secs, csum)
 
-    print_json(engine_name, engine_version, M, N, K, repeats, None, secs, csum)
+    # Decide backend
+    backend = args.backend
+    if backend == "cpu":
+        run_cpu()
+    elif backend == "gpu":
+        run_gpu()
+    else:  # auto
+        if torch is not None and getattr(torch, "cuda", None) is not None and torch.cuda.is_available():
+            run_gpu()
+        else:
+            run_cpu()
     return 0
 
 

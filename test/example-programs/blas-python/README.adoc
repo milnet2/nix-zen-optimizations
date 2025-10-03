@@ -1,10 +1,11 @@
 == BLAS example program (Python)
 
-A simple long-running BLAS job implemented in Python using NumPy.
+A simple long-running BLAS job implemented in Python using NumPy (CPU) and optionally PyTorch (GPU).
 
 - Performs multiple single-precision matrix multiplications (SGEMM): C = A × B with column-major (Fortran) arrays, no transposes, alpha=1, beta=0.
 - Repeats the GEMM operation a configurable number of times and measures only the time spent inside the GEMM calls.
 - CPU backend via the BLAS provider that NumPy is linked against (e.g., OpenBLAS, BLIS, MKL).
+- Optional GPU backend via PyTorch (CUDA or ROCm). Selected at runtime with --backend gpu (or BLAS_BACKEND=gpu). Falls back to CPU if unavailable.
 
 Example JSON result:
 
@@ -26,6 +27,14 @@ nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { }' && \
 ./result/bin/blas-test 4096 4096 100
 ----
 
+GPU (PyTorch; requires a PyTorch build with CUDA or ROCm)::
+[source,bash]
+----
+# Enable PyTorch in the Python environment used by the script
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { enableTorch = true; }' && \
+./result/bin/blas-test --backend gpu 4096 4096 100
+----
+
 === Using Optimized Nix (with Zen optimizations)
 
 To build the program with the optimized Nix setup from this repository:
@@ -35,4 +44,11 @@ CPU::
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { }' && \
 ./result/bin/blas-test 4096 4096 100
+----
+
+GPU (PyTorch; requires ROCm/CUDA-enabled PyTorch)::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { enableTorch = true; }' && \
+./result/bin/blas-test --backend gpu 4096 4096 100
 ----
