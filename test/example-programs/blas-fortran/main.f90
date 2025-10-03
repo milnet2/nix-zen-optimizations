@@ -126,16 +126,16 @@ contains
     write(*,'(A,I0,A)') '    "K": ', K, ','
     write(*,'(A,I0,A)') '    "repeats": ', repeats, ','
     write(*,'(A,I0,A)') '    "expected_bytes_total": ', total_bytes, ','
-    write(*,'(A,F0.1)') '    "expected_megabytes_total": ', total_mb
+    write(*,'(A,F12.1)') '    "expected_megabytes_total": ', total_mb
     write(*,'(A)') '  },'
     if (len_trim(error) > 0) then
       write(*,'(A,A,A)') '  "error": "', trim(error), '"'
     end if
     if (secs > 0.0) then
       write(*,'(A)') '  "output": {'
-      write(*,'(A,F0.6,A)') '    "time_sec": ', secs, ','
-      write(*,'(A,F0.2,A)') '    "gflops": ', gflops, ','
-      write(*,'(A,F0.6)') '    "checksum": ', csum
+      write(*,'(A,F12.6,A)') '    "time_sec": ', secs, ','
+      write(*,'(A,F12.2,A)') '    "gflops": ', gflops, ','
+      write(*,'(A,F24.6)') '    "checksum": ', csum
       write(*,'(A)') '  }'
     end if
     write(*,'(A)') '}'

@@ -1,38 +1,28 @@
 # Unit tests
 # See: https://nix-community.github.io/nix-unit/
-# nix run --no-write-lock-file github:nix-community/nix-unit -- ./zen-optimized-pkgs.test.nix
+# nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-fortran.test.nix
 {
    importablePkgsDelegate ? <nixpkgs>,
    lib ? (import importablePkgsDelegate {}).lib,
-}: let
-    pkgsTuned = import ./zen-optimized-pkgs.nix {
+   pkgsTuned ? import ../zen-optimized-pkgs.nix {
         inherit importablePkgsDelegate lib;
         amdZenVersion = 2; # TODO: 5
-        isLtoEnabled = true; };
-    isAvx512Expected = false;
+        isLtoEnabled = true; },
+    isAvx512Expected ? false,
+}: let
+    buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-fortran {};
+    buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json");
 in {
-    "Optimized C compilation" =
-        import ./test/test-c.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
-
-    "Optimized C++ compilation" = let
-        buildInfoProgram = pkgsTuned.callPackage ./test/example-programs/buildinfo-cpp {};
-        buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json"); # Json was created by executing program
-    in {
         "test target arch is x86_64" = {
             expr = buildInfoJson.target.arch;
             expected = "x86_64";
         };
-        "test g++ version" = {
-            expr = buildInfoJson.compiler.version_string;
-            expected = pkgsTuned.stdenv.cc.version;
+        "test gfortran/gcc version" = {
+            expr = builtins.match "[0-9]+\\.[0-9]+(\\.[0-9]+)?" buildInfoJson.compiler.version_string != null;
+            expected = true;
         };
         "test fastmath" = {
             expr = buildInfoJson.compiler.fast_math;
-            expected = true;
-        };
-        "test cpp version" = {
-            expr = buildInfoJson.compiler.cpp_version > 0;
             expected = true;
         };
         "test avx and sse" = {
@@ -79,29 +69,15 @@ in {
                 avx512vnni = isAvx512Expected;
             };
         };
-    };
 
-    "Go environment" =
-        import ./test/test-go.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
-
-    "Optimized Fortran compilation" =
-        import ./test/test-fortran.test.nix { inherit importablePkgsDelegate lib
-            pkgsTuned isAvx512Expected; };
-
-    "Optimized Haskell compilation" =
-        import ./test/test-haskell.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
-
-    "Python environment" =
-        import ./test/test-python.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
-
-    "R environment" =
-        import ./test/test-r.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
-
-    "Rust environment" =
-        import ./test/test-rust.test.nix { inherit importablePkgsDelegate lib
-           pkgsTuned isAvx512Expected; };
+        "BLAS implementations (Fortran)" = {
+            "test BLAS on CPU" = {
+                expr = let
+                    testProgram = pkgsTuned.callPackage ./example-programs/blas-fortran { };
+                    testExecution = pkgsTuned.callPackage ./example-programs/blas-fortran/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
+                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
+                in testResult.engine.name;
+                expected = "BLAS";
+            };
+        };
 }
