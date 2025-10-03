@@ -22,14 +22,15 @@
         nasm perl curl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
-        cmake tradcpp
-        adns tcl
+        cmake tradcpp git dejagnu meson
+        adns tcl libuv libffi
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
         expat readline
-        gnum4 pkg-config bison gettext texinfo
+        gnum4 ninja pkg-config bison gettext texinfo
 
         tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango asciidoc
+        docbook docbook-xml
         fontforge fontconfig libXft
         xorg # xorgproto libXt libX11
         libtiff libjpeg
@@ -168,17 +169,62 @@ let
 
             testers = [];
 
-                packageOverrides = pyFinal: pyPrev: {
-                  numpy = pyPrev.numpy.override {
-                    blas = final.blas;
-                    lapack = final.lapack;
-                  };
-                  scipy = pyPrev.scipy.override {
-                    blas = final.blas;
-                    lapack = final.lapack;
-                  };
+            packageOverrides = pyFinal: pyPrev: rec {
+                numpy = (pyPrev.numpy.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/numpy/2.nix
+                    inherit (final) blas lapack gfortran;
+                    # inherit (unoptimizedPkgs) pytest-xdist;
+                    pytest-xdist = null; # TODO: That's a bit harsh!
+                });
+
+                cython = (pyPrev.cython.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/cython/default.nix
+                    inherit (unoptimizedPkgs) gdb ncurses;
+                    inherit numpy;
+                });
+
+                cffi = (pyPrev.cffi.override {
+                   # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/cffi/default.nix
+                   inherit (unoptimizedPkgs) libffi;
+                });
+
+                # XXX: meson is not overridable
+#                meson = unoptimizedPkgs.pythonPackages.meson;
+#                meson = (pyPrev.meson.override {
+#                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/me/meson/package.nix
+#                    inherit (unoptimizedPkgs) coreutils ninja zlib;
+#                    # TODO: llvmPackages.openmp
+#                });
+
+                meson-python = (pyPrev.meson-python.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/meson-python/default.nix
+                    inherit (unoptimizedPkgs) meson ninja;
+#                    inherit cython;
+                });
+
+#                pytest-xdist = (pyPrev.pytest-xdist.override {
+#                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/pytest-xdist/default.nix
+#                    inherit execnet; # py: psutil;
+#                });
+#
+#                execnet = (pyPrev.execnet.override {
+#                     # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/execnet/default.nix
+#                     inherit (unoptimizedPkgs) ; # py: hatchling hatch-vcs gevent
+#                });
+
+                gevent = (pyPrev.gevent.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/gevent/default.nix
+                    inherit (unoptimizedPkgs) libuv;
+                    inherit cffi cython;
+                });
+
+                scipy = pyPrev.scipy.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/scipy/default.nix
+                    inherit (final) blas lapack gfortran;
+                    inherit numpy;
                 };
-              };
+            };
+          };
     });
 
     rOverlay = (final: prev: {
