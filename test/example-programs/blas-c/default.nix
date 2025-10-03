@@ -8,13 +8,17 @@
 , isCpu ? true
 }:
 let
-    buildCpu = ''
+    buildCpuBlas = ''
       echo "== CPU build with CBLAS (e.g. amd-blis, OpenBLAS, ...)"
       # Try pkg-config for CBLAS; fall back to common flags if not available.
       CFLAGS_EXTRA="$(pkg-config --cflags cblas 2>/dev/null || true)"
       LDLIBS_EXTRA="$(pkg-config --libs   cblas 2>/dev/null || echo "-lcblas -lblas")"
 
       $CC -o build/blas-test-cpu main.c backend_cpu.c $CFLAGS_EXTRA $LDLIBS_EXTRA -ldl
+    '';
+    buildCpuPlain = ''
+      echo "== CPU build (plain)"
+      $CC -o build/blas-test-cpu main.c backend_plain.c -ldl
     '';
     buildGpuCc = ''
       echo "== GPU build with rocBLAS C-Compiler"
@@ -38,6 +42,12 @@ let
                 -o build/blas-test-gpu \
                 main.c backend_gpu.c
     '';
+
+    actualBuild =
+        (if isCpu then
+            (if (blas != null) then buildCpuBlas else buildCpuPlain)
+        else # GPU
+            (if (hipcc != null) then buildGpuHip else buildGpuCc));
 in
 stdenv.mkDerivation {
   pname = "blas-test";
@@ -59,11 +69,9 @@ stdenv.mkDerivation {
 
   buildPhase = ''
     runHook preBuild
-
     mkdir -p build
-    '' +
-    (if isCpu then buildCpu else (if (hipcc != null) then buildGpuHip else buildGpuCc)) +
-    ''
+
+    ${actualBuild}
 
     runHook postBuild
     '';
