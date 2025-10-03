@@ -1,13 +1,17 @@
-{ stdenv, lib, python3, enableTorch ? false }:
-
-stdenv.mkDerivation {
+{ python3Packages, enableTorch ? false }:
+with python3Packages;
+let
+  pythonEnv = python.withPackages (ps: [ ps.numpy ] ++ (if enableTorch then [ ps.pytorch ] else []));
+in
+buildPythonApplication {
   pname = "blas-test-python";
   version = "1.1.0";
 
   src = ./.; # expects: blas_test.py
+  format = "other";
 
-  # NumPy for CPU; optionally add PyTorch for GPU backend
-  buildInputs = [ (python3.withPackages (ps: with ps; ([ numpy ] ++ (if enableTorch then [ pytorch ] else [])))) ];
+  # Keep explicit inputs for completeness; shebang will point to pythonEnv
+  buildInputs = [ numpy ] ++ (if enableTorch then [ pytorch ] else []);
 
   outputs = [ "out" ];
 
@@ -16,6 +20,7 @@ stdenv.mkDerivation {
     chmod +x blas_test.py
     mkdir -p build
     cp blas_test.py build/blas-test
+    substituteInPlace build/blas-test --replace "#!/usr/bin/env python3" "#!${pythonEnv}/bin/python"
     runHook postBuild
   '';
 

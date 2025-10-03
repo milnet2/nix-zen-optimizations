@@ -40,7 +40,7 @@
 
         jdk # TODO: Optimize this?
 
-        ncurses libssh2
+        ncurses libssh2 unzip
         libpfm openssl bash-interactive
         ; }
 }:
@@ -176,7 +176,6 @@ let
                     inherit (final) blas lapack gfortran; # overridden on other overlays
                     inherit hypothesis; # i.e. overridden somewhere here
                     # inherit (unoptimizedPkgs) pytest-xdist;
-                    pytest-xdist = null; # TODO: That's a bit harsh!
                 }).overridePythonAttrs (old: {
                     # TODO: Test if we may run these with fast-math
                     doCheck = !isAggressiveFastMathEnabled;
