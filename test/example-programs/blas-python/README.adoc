@@ -52,3 +52,34 @@ GPU (PyTorch; requires ROCm/CUDA-enabled PyTorch)::
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { enableTorch = true; }' && \
 ./result/bin/blas-test --backend gpu 4096 4096 100
 ----
+
+
+=== ROCm notes and troubleshooting
+
+If you have AMD GPUs with ROCm and see an error like "torch.cuda not available":
+
+- This program now detects ROCm-built PyTorch and will attempt to use the GPU even if torch.cuda.is_available() is false by probing a tiny allocation on the 'cuda' device (which aliases HIP on ROCm builds).
+- Ensure your PyTorch is built with ROCm. In Python, check:
++
+[source,python]
+----
+import torch
+print('torch.version.hip =', getattr(torch.version, 'hip', None))
+print('torch.version.cuda =', getattr(torch.version, 'cuda', None))
+----
+
+- If your GPU is unofficially supported, you may need to spoof the GFX version, similarly to the C example:
++
+[source,bash]
+----
+HSA_OVERRIDE_GFX_VERSION=9.0.0 ./result/bin/blas-test --backend gpu 4096 4096 100
+----
+
+- Also verify that the GPU is visible to ROCm (HIP):
++
+[source,bash]
+----
+echo $HIP_VISIBLE_DEVICES  # should allow access to at least one GPU
+----
+
+If GPU is still not usable, the program will print a JSON with an "error" field containing a hint (e.g., ROCm build detected but GPU not available). Falling back to CPU is available with --backend cpu.

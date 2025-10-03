@@ -125,8 +125,32 @@ def main(argv: list[str]) -> int:
         if torch is None:
             print_json("PyTorch", "", M, N, K, repeats, "torch not available", None, None)
             return
-        if not torch.cuda.is_available():
-            print_json("PyTorch", getattr(torch, "__version__", ""), M, N, K, repeats, "torch.cuda not available", None, None)
+        def _hip_built() -> bool:
+            try:
+                ver = getattr(torch, "version", None)
+                return bool(getattr(ver, "hip", None))
+            except Exception:
+                return False
+        # Determine if we can use GPU (CUDA or ROCm/HIP)
+        gpu_ok = False
+        if getattr(torch, "cuda", None) is not None and torch.cuda.is_available():
+            gpu_ok = True
+        elif _hip_built():
+            # Probe by trying a tiny allocation on 'cuda' device (alias for HIP on ROCm builds)
+            try:
+                _ = torch.empty((1,), device=torch.device("cuda"))
+                torch.cuda.synchronize()
+                gpu_ok = True
+            except Exception:
+                gpu_ok = False
+        if not gpu_ok:
+            ver = getattr(torch, "__version__", "")
+            cuda_ver = getattr(getattr(torch, "version", None), "cuda", None)
+            hip_ver = getattr(getattr(torch, "version", None), "hip", None)
+            hint = "torch.cuda not available"
+            if hip_ver and not cuda_ver:
+                hint = f"ROCm build detected (HIP {hip_ver}) but GPU not available; check ROCm runtime and device support"
+            print_json("PyTorch", ver, M, N, K, repeats, hint, None, None)
             return
         device = torch.device("cuda")
         dtype = torch.float32
@@ -157,7 +181,32 @@ def main(argv: list[str]) -> int:
     elif backend == "gpu":
         run_gpu()
     else:  # auto
-        if torch is not None and getattr(torch, "cuda", None) is not None and torch.cuda.is_available():
+        def _hip_built() -> bool:
+            try:
+                ver = getattr(torch, "version", None)
+                return bool(getattr(ver, "hip", None))
+            except Exception:
+                return False
+        def _gpu_available() -> bool:
+            if torch is None:
+                return False
+            try:
+                if getattr(torch, "cuda", None) is not None and torch.cuda.is_available():
+                    return True
+                # If ROCm build, try a small probe allocation on 'cuda' (alias for HIP)
+                if _hip_built():
+                    try:
+                        dev = torch.device("cuda")
+                        _ = torch.empty((1,), device=dev)
+                        # synchronize exists on ROCm builds too
+                        torch.cuda.synchronize()
+                        return True
+                    except Exception:
+                        return False
+            except Exception:
+                return False
+            return False
+        if _gpu_available():
             run_gpu()
         else:
             run_cpu()
