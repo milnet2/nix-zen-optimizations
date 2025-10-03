@@ -19,6 +19,37 @@ typedef const char* (*blis_ver_fn)(void);          // bli_info_get_version_str()
 typedef char*       (*openblas_cfg_fn)(void);      // openblas_get_config()
 typedef void        (*mkl_get_ver_fn)(char*, int); // mkl_get_version_string()
 
+// Minimal JSON escaper for strings we include in the engine JSON
+static void json_escape_str(const char* in, char* out, size_t out_len) {
+  if (!in || !out || out_len == 0) return;
+  size_t j = 0;
+  for (size_t i = 0; in[i] != '\0' && j + 1 < out_len; ++i) {
+    unsigned char c = (unsigned char)in[i];
+    if (c == '"' || c == '\\') {
+      if (j + 2 >= out_len) break;
+      out[j++] = '\\'; out[j++] = (char)c;
+    } else if (c == '\n') {
+      if (j + 2 >= out_len) break;
+      out[j++] = '\\'; out[j++] = 'n';
+    } else if (c == '\r') {
+      if (j + 2 >= out_len) break;
+      out[j++] = '\\'; out[j++] = 'r';
+    } else if (c == '\t') {
+      if (j + 2 >= out_len) break;
+      out[j++] = '\\'; out[j++] = 't';
+    } else if (c < 0x20) {
+      if (j + 6 >= out_len) break;
+      static const char hex[] = "0123456789abcdef";
+      out[j++] = '\\'; out[j++] = 'u'; out[j++] = '0'; out[j++] = '0';
+      out[j++] = hex[(c >> 4) & 0xF];
+      out[j++] = hex[c & 0xF];
+    } else {
+      out[j++] = (char)c;
+    }
+  }
+  out[j] = '\0';
+}
+
 struct BlasHandle { int dummy; };
 
 static double now_sec(void) {
@@ -64,12 +95,14 @@ size_t blas_get_engine_info(char* buf, size_t len) {
   // Identify the shared object that provides cblas_sgemm
   Dl_info info;
   void* provider = RTLD_DEFAULT;
+  const char* so_path = NULL;
   if (dladdr((void*)cblas_sgemm, &info) && info.dli_fname) {
     void* h = dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY);
     if (h) provider = h;
-  } else {
-    info.dli_fname = NULL;
+    so_path = info.dli_fname;
   }
+  char so_esc[512];
+  json_escape_str(so_path ? so_path : "unknown", so_esc, sizeof so_esc);
 
   // --- Try OpenBLAS ---
   typedef const char* (*openblas_cfg_fn)(void); // openblas_get_config()
@@ -79,8 +112,9 @@ size_t blas_get_engine_info(char* buf, size_t len) {
   }
   if (openblas_get_config) {
     const char* cfg = openblas_get_config(); // e.g. "OpenBLAS 0.3.26 DYNAMIC_ARCH ..."
-    snprintf(buf, len, "OpenBLAS: %s (%s)", cfg ? cfg : "unknown",
-             info.dli_fname ? info.dli_fname : "unknown");
+    char cfg_esc[512];
+    json_escape_str(cfg ? cfg : "unknown", cfg_esc, sizeof cfg_esc);
+    snprintf(buf, len, "{\"name\":\"OpenBLAS\",\"config\":\"%s\"}", cfg_esc);
     buf[len - 1] = '\0';
     if (provider != RTLD_DEFAULT && provider) dlclose(provider);
     return strlen(buf);
@@ -94,8 +128,9 @@ size_t blas_get_engine_info(char* buf, size_t len) {
   }
   if (blis_get_ver) {
     const char* v = blis_get_ver(); // e.g. "AOCL-BLIS 4.1.0 ..."
-    snprintf(buf, len, "BLIS: %s (%s)", v ? v : "unknown",
-             info.dli_fname ? info.dli_fname : "unknown");
+    char v_esc[512];
+    json_escape_str(v ? v : "unknown", v_esc, sizeof v_esc);
+    snprintf(buf, len, "{\"name\":\"BLIS\",\"version\":\"%s\"}", v_esc);
     buf[len - 1] = '\0';
     if (provider != RTLD_DEFAULT && provider) dlclose(provider);
     return strlen(buf);
@@ -108,16 +143,16 @@ size_t blas_get_engine_info(char* buf, size_t len) {
   if (mkl_get_version_string) {
     char tmp[192] = {0};
     mkl_get_version_string(tmp, (int)sizeof(tmp));
-    snprintf(buf, len, "%s (%s)", tmp,
-             info.dli_fname ? info.dli_fname : "unknown");
+    char ver_esc[256];
+    json_escape_str(tmp[0] ? tmp : "unknown", ver_esc, sizeof ver_esc);
+    snprintf(buf, len, "{\"name\":\"MKL\",\"version\":\"%s\"}", ver_esc);
     buf[len - 1] = '\0';
     if (provider != RTLD_DEFAULT && provider) dlclose(provider);
     return strlen(buf);
   }
 
-  // --- Fallback: just print the provider .so path ---
-  snprintf(buf, len, "BLAS library: %s",
-           info.dli_fname ? info.dli_fname : "unknown");
+  // --- Fallback ---
+  snprintf(buf, len, "{\"name\":\"Unknown\"}");
   buf[len - 1] = '\0';
   if (provider != RTLD_DEFAULT && provider) dlclose(provider);
   return strlen(buf);
