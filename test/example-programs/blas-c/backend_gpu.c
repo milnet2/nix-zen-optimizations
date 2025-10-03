@@ -60,30 +60,38 @@ static double now_sec(void) {
   return ts.tv_sec + ts.tv_nsec * 1e-9;
 }
 
-static void hip_check(hipError_t st, const char* what) {
-  if (st != hipSuccess) {
-    fprintf(stderr, "HIP %s failed: %s\n", what, hipGetErrorString(st));
-    exit(1);
-  }
-}
-static void rocblas_check(rocblas_status st, const char* what) {
-  if (st != rocblas_status_success) {
-    fprintf(stderr, "rocBLAS %s failed: status=%d\n", what, (int)st);
-    exit(1);
-  }
-}
-
 BlasHandle* blas_init(int M, int N, int K) {
   BlasHandle* h = (BlasHandle*)calloc(1, sizeof(BlasHandle));
+  if (!h) return NULL;
   h->M = M; h->N = N; h->K = K;
   h->szA = (size_t)M * K * sizeof(float);
   h->szB = (size_t)K * N * sizeof(float);
   h->szC = (size_t)M * N * sizeof(float);
 
-  rocblas_check(rocblas_create_handle(&h->handle), "create_handle");
-  hip_check(hipMalloc((void**)&h->dA, h->szA), "hipMalloc(A)");
-  hip_check(hipMalloc((void**)&h->dB, h->szB), "hipMalloc(B)");
-  hip_check(hipMalloc((void**)&h->dC, h->szC), "hipMalloc(C)");
+  rocblas_status rbst = rocblas_create_handle(&h->handle);
+  if (rbst != rocblas_status_success) {
+    fprintf(stderr, "rocBLAS create_handle failed: status=%d\n", (int)rbst);
+    free(h);
+    return NULL;
+  }
+  hipError_t ha = hipMalloc((void**)&h->dA, h->szA);
+  if (ha != hipSuccess) {
+    fprintf(stderr, "HIP hipMalloc(A) failed: %s\n", hipGetErrorString(ha));
+    blas_finalize(h);
+    return NULL;
+  }
+  hipError_t hb = hipMalloc((void**)&h->dB, h->szB);
+  if (hb != hipSuccess) {
+    fprintf(stderr, "HIP hipMalloc(B) failed: %s\n", hipGetErrorString(hb));
+    blas_finalize(h);
+    return NULL;
+  }
+  hipError_t hc = hipMalloc((void**)&h->dC, h->szC);
+  if (hc != hipSuccess) {
+    fprintf(stderr, "HIP hipMalloc(C) failed: %s\n", hipGetErrorString(hc));
+    blas_finalize(h);
+    return NULL;
+  }
   return h;
 }
 
@@ -94,42 +102,48 @@ double blas_sgemm(BlasHandle* h,
   // Sanity: use sizes from init (M,N,K should match)
   (void)M; (void)N; (void)K;
 
-  hip_check(hipMemcpy(h->dA, A, h->szA, hipMemcpyHostToDevice), "Memcpy H2D A");
-  hip_check(hipMemcpy(h->dB, B, h->szB, hipMemcpyHostToDevice), "Memcpy H2D B");
-  hip_check(hipMemset(h->dC, 0, h->szC), "Memset C");
+  hipError_t hst;
+  hst = hipMemcpy(h->dA, A, h->szA, hipMemcpyHostToDevice);
+  if (hst != hipSuccess) { fprintf(stderr, "HIP Memcpy H2D A failed: %s\n", hipGetErrorString(hst)); return -1.0; }
+  hst = hipMemcpy(h->dB, B, h->szB, hipMemcpyHostToDevice);
+  if (hst != hipSuccess) { fprintf(stderr, "HIP Memcpy H2D B failed: %s\n", hipGetErrorString(hst)); return -1.0; }
+  hst = hipMemset(h->dC, 0, h->szC);
+  if (hst != hipSuccess) { fprintf(stderr, "HIP Memset C failed: %s\n", hipGetErrorString(hst)); return -1.0; }
 
   const float alpha = 1.0f, beta = 0.0f;
 
   // Warmup
-  rocblas_check(
-        rocblas_sgemm(h->handle,
+  rocblas_status rb;
+  rb = rocblas_sgemm(h->handle,
                       rocblas_operation_none, rocblas_operation_none,
                       /* m */ N, /* n */ M, /* k */ K,
                       &alpha,
                       /* A */ h->dB, /* lda */ N,
                       /* B */ h->dA, /* ldb */ K,
                       &beta,
-                      /* C */ h->dC, /* ldc */ N),
-    "sgemm warmup");
-  hip_check(hipDeviceSynchronize(), "sync warmup");
+                      /* C */ h->dC, /* ldc */ N);
+  if (rb != rocblas_status_success) { fprintf(stderr, "rocBLAS sgemm warmup failed: status=%d\n", (int)rb); return -1.0; }
+  hst = hipDeviceSynchronize();
+  if (hst != hipSuccess) { fprintf(stderr, "HIP sync warmup failed: %s\n", hipGetErrorString(hst)); return -1.0; }
 
   double t0 = now_sec();
   for (int r = 0; r < repeats; ++r) {
-    rocblas_check(
-        rocblas_sgemm(h->handle,
+    rb = rocblas_sgemm(h->handle,
                       rocblas_operation_none, rocblas_operation_none,
                       /* m */ N, /* n */ M, /* k */ K,
                       &alpha,
                       /* A */ h->dB, /* lda */ N,
                       /* B */ h->dA, /* ldb */ K,
                       &beta,
-                      /* C */ h->dC, /* ldc */ N),
-      "sgemm");
+                      /* C */ h->dC, /* ldc */ N);
+    if (rb != rocblas_status_success) { fprintf(stderr, "rocBLAS sgemm failed: status=%d (iter=%d)\n", (int)rb, r); return -1.0; }
   }
-  hip_check(hipDeviceSynchronize(), "sync");
+  hst = hipDeviceSynchronize();
+  if (hst != hipSuccess) { fprintf(stderr, "HIP sync failed: %s\n", hipGetErrorString(hst)); return -1.0; }
   double t1 = now_sec();
 
-  hip_check(hipMemcpy(C, h->dC, h->szC, hipMemcpyDeviceToHost), "Memcpy D2H C");
+  hst = hipMemcpy(C, h->dC, h->szC, hipMemcpyDeviceToHost);
+  if (hst != hipSuccess) { fprintf(stderr, "HIP Memcpy D2H C failed: %s\n", hipGetErrorString(hst)); return -1.0; }
 
   return t1 - t0;
 }

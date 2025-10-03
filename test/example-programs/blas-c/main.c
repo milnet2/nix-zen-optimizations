@@ -86,16 +86,53 @@ int main(int argc, char** argv) {
   blas_get_engine_info(eng, sizeof eng);
 
   BlasHandle* h = blas_init(M, N, K);
-  if (!h) { fprintf(stderr, "blas_init failed\n"); return 1; }
+  if (!h) {
+    // Initialization failed: still print JSON result including engine
+    double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
+    unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
+    printf("{\n");
+    printf("  \"engine\": %s,\n", eng);
+    printf("  \"M\": %d,\n", M);
+    printf("  \"N\": %d,\n", N);
+    printf("  \"K\": %d,\n", K);
+    printf("  \"repeats\": %d,\n", repeats);
+    printf("  \"bytes_total\": %llu,\n", total_bytes);
+    printf("  \"megabytes_total\": %.1f,\n", total_mb);
+    printf("  \"error\": \"blas_init failed\"\n");
+    printf("}\n");
+    free(A); free(B); free(C);
+    return 2;
+  }
 
   // Time *just* the GEMM loop; init/finalize are excluded.
   double secs = blas_sgemm(h, A, B, C, M, N, K, repeats);
+
+  // Common bytes info
+  double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
+  unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
+
+  if (secs < 0.0) {
+    // GEMM failed during execution: still print JSON result including engine
+    printf("{\n");
+    printf("  \"engine\": %s,\n", eng);
+    printf("  \"M\": %d,\n", M);
+    printf("  \"N\": %d,\n", N);
+    printf("  \"K\": %d,\n", K);
+    printf("  \"repeats\": %d,\n", repeats);
+    printf("  \"bytes_total\": %llu,\n", total_bytes);
+    printf("  \"megabytes_total\": %.1f,\n", total_mb);
+    printf("  \"error\": \"sgemm failed\"\n");
+    printf("}\n");
+
+    blas_finalize(h);
+    free(A); free(B); free(C);
+    return 3;
+  }
+
   double gflops = (2.0 * (double)M * (double)N * (double)K * repeats) / (secs * 1e9);
   float csum = checksum(C, M*N);
 
   // Output JSON
-  double total_mb = (szA + szB + szC) / (1024.0 * 1024.0);
-  unsigned long long total_bytes = (unsigned long long)(szA + szB + szC);
   printf("{\n");
   printf("  \"engine\": %s,\n", eng);
   printf("  \"M\": %d,\n", M);

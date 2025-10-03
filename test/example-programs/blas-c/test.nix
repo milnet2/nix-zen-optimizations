@@ -8,9 +8,17 @@ stdenv.mkDerivation {
 
   buildPhase =
     if (spoofGpu != null) then
-        ''HSA_OVERRIDE_GFX_VERSION='${spoofGpu}' ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} 2>&1 >result.json''
+        ''
+        set +e
+        HSA_OVERRIDE_GFX_VERSION='${spoofGpu}' ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} >result.json
+        set -e
+        ''
     else
-        ''${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} 2>&1 >result.json'';
+        ''
+        set +e
+        ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} >result.json
+        set -e
+        '';
 
   installPhase = ''
     mkdir -p $out/lib
