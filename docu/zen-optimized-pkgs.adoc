@@ -29,6 +29,9 @@ Parameter `amdZenVersion`::
 Parameter `isLtoEnabled`::
     Boolean weather to enable LTO-optimizations on some packages.
     Be careful with enabling that: It will easily break stuff.
+Parameter `isAggressiveFastMathEnabled`::
+    Setting this boolean to true will enable `-ffast-math` globally.
+    This will cause loss of precision and some special values like `NAN` not to be available. Some tests will also need to be disabled because of that.
 Parameter `optimizationParameter`::
     String representing the optimization-parameters passed to the compilers. Typically `-O2` or `-O3`
 Parameter `basePythonPackage`::
