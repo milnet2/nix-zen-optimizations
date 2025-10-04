@@ -1,0 +1,24 @@
+== Optimized variants of `stdenv`
+
+For the optimizations there's barely an on-size-fits-all option.
+
+In "_helper/stdenvs.nix_" there are some pre-defined variantes we can mix-and-match the packages from.
+
+=== `stendvs.upstream` for hitting the cache
+
+Use this `stdenv` for packages you want to be picked from the official caches - i.e. don't want
+to rebuild yourself
+
+=== `stendvs.safeTweaks` for safe optimization
+
+These packages need to be recompiled for your system.
+
+It enables optimizations which are typically safe ot do like `-O3`, `-march`, `-mtune` etc.
+
+=== `stendvs.withLto`
+
+Enabling link-time-optimizations will break several packages. It can be beneficial for selected packages, though.
+
+=== `stendvs.withAggressiveFastMath`
+
+Doing fast-math will only have an impact on a few packages. Enabling it globally would easily break stuff

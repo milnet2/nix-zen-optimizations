@@ -16,7 +16,7 @@ This combination is set up in "_../zen-optimized-pkgs.nix_" through the `openBla
 
 [source,nix]
 ----
-include::../zen-optimized-pkgs.nix[tag=openBlasOverlay]
+include::../overlays/library/blas-lapack/default.nix[]
 ----
 
 === GPU-only: `rocmPackages.rocblas` (Radeon only)
