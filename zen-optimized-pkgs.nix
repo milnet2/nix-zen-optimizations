@@ -177,8 +177,8 @@ let
                     inherit hypothesis; # i.e. overridden somewhere here
                     # inherit (unoptimizedPkgs) pytest-xdist;
                 }).overridePythonAttrs (old: {
-                    # TODO: Test if we may run these with fast-math
-                    doCheck = !isAggressiveFastMathEnabled;
+                    # Tests would fail because of lag of precision with fast-math enabled
+                    doCheck = old.doCheck && !isAggressiveFastMathEnabled;
                 });
 
                 cython = (pyPrev.cython.override {
@@ -192,7 +192,9 @@ let
                    inherit (unoptimizedPkgs) libffi;
                 }).overridePythonAttrs (old: {
                     # Currently some tests fail on float precision. likely due to aggressive fast-math
-                    doCheck = !isAggressiveFastMathEnabled;
+                    doCheck = old.doCheck && !isAggressiveFastMathEnabled;
+                    # TODO disabledTests = old.disabledTests ++
+                    #    (if isAggressiveFastMathEnabled then [ "test_float_types" "test_longdouble_precision" ] else []);
                 });
 
                 # XXX: meson is not overridable
