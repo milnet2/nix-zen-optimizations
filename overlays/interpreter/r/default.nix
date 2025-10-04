@@ -5,8 +5,8 @@
             perl ncurses curl readline texinfo bison jdk tzdata
             texlive texliveSmall graphviz pango
             libtiff libjpeg;
-        libX11 = noOptimizePkgs.xorg.libX11;
-        libXt = noOptimizePkgs.xorg.libXt;
+        libX11 = unoptimizedPkgs.xorg.libX11;
+        libXt = unoptimizedPkgs.xorg.libXt;
         inherit (final) blas lapack;
 
         inherit (unoptimizedPkgs) stdenv gfortran; # TODO Because of LTO - TODO: Optimized? - match GCC version

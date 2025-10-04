@@ -20,7 +20,7 @@ let
 in rec {
     # Use this `stdenv` for packages you want to be picked from the official caches - i.e. don't want
     # to rebuild yourself
-    upstream = unoptimizedPkgs.stenv;
+    upstream = unoptimizedPkgs.stdenv;
 
     # Has optimizations which are typically safe ot do (-O3, -march, -mtune) etc
     safeTweaks = stenvAdapter.wrapStdenv {

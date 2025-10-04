@@ -92,6 +92,7 @@ let
     pythonOverlay = import ./overlays/interpreter/python/default.nix { inherit optimizedPlatform unoptimizedPkgs basePythonPackage isLtoEnabled isAggressiveFastMathEnabled; };
     rOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
     openBlasOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs amdZenVersion; };
+    rOverlay = import ./overlays/interpreter/r/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
     # TODO: OpenMP ??
 
 in import importablePkgsDelegate rec {
