@@ -31,7 +31,7 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin
-    install -Dm755 build/blas-test $out/bin/blas-test
+    install -Dm755 build/blas-test $out/bin/blas-test-f90
     runHook postInstall
   '';
 

@@ -19,7 +19,7 @@ buildGoModule {
 
   installPhase = ''
     mkdir -p $out/bin
-    cp buildinfo $out/bin/
+    cp buildinfo $out/bin/buildinfo-go
     mkdir -p $out/lib
     cp buildinfo.json $out/lib
   '';

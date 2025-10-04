@@ -43,14 +43,14 @@ CPU::
 [source,bash]
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { }' && \
-./result/bin/blas-test --backend cpu 4096 4096 100
+./result/bin/blas-test-py --backend cpu 4096 4096 100
 ----
 
 GPU (PyTorch; requires ROCm/CUDA-enabled PyTorch)::
 [source,bash]
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { enableTorch = true; }' && \
-./result/bin/blas-test --backend gpu 4096 4096 100
+./result/bin/blas-test-py --backend gpu 4096 4096 100
 ----
 
 

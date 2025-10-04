@@ -16,6 +16,33 @@ pkgsTuned = import ./zen-optimized-pkgs.nix {
     };
 ----
 
+or from a flake:
+
+[source,nix]
+----
+{
+  inputs = {
+    pkgs-tuned = {
+      url = "github:milnet2/nix-zen-optimizations";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = { self, nixpkgs, pkgs-tuned, ... }:
+    let
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+      pkgsTuned = import pkgs-tuned {
+        importablePkgsDelegate = nixpkgs;
+        unoptimizedPkgs = pkgs;
+        amdZenVersion = 2;
+      };
+    in
+    # ....
+}
+----
+
 The mechanism tries to use the (unoptimized) compilers present on the system and create optimized binaries from the packages to install.
 
 See xref:docu/zen-optimized-pkgs.adoc[] for the full description of parameters.

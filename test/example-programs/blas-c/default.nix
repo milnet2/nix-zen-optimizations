@@ -80,9 +80,9 @@ stdenv.mkDerivation {
     runHook preInstall
     mkdir -p $out/bin
     if [ ${lib.boolToString isCpu} = true ]; then
-      install -Dm755 build/blas-test-cpu $out/bin/blas-test
+      install -Dm755 build/blas-test-cpu $out/bin/blas-test-c
     else
-      install -Dm755 build/blas-test-gpu $out/bin/blas-test
+      install -Dm755 build/blas-test-gpu $out/bin/blas-test-c
     fi
     runHook postInstall
   '';

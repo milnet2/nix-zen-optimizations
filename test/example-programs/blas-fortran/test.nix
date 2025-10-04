@@ -8,7 +8,7 @@ stdenv.mkDerivation {
 
   buildPhase = ''
     set +e
-    ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} >result.json
+    ${blas-test}/bin/blas-test-f90 ${toString m} ${toString n} ${toString iterations} >result.json
     set -e
   '';
 

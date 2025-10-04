@@ -11,7 +11,7 @@ The primary purpose of this program is to verify that compiler optimizations are
 [source,bash]
 ----
 nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
-./result/bin/buildinfo
+./result/bin/buildinfo-rs
 ----
 
 === Using Optimized Nix (with Zen optimizations)
@@ -21,5 +21,5 @@ To build the program with the optimized Nix setup from this repository:
 [source,bash]
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix {}'
-./result/bin/buildinfo
+./result/bin/buildinfo-rs
 ----
