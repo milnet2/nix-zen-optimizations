@@ -45,9 +45,13 @@
 
                     # BLAS examples (CPU)
                     blas-c-cpu       = pkgsTuned.callPackage ./test/example-programs/blas-c/default.nix {
-                        blas = pkgsTuned.blas;
+                        inherit (pkgsTuned) blas pkg-config;
                         isCpu = true;
-                        pkg-config = pkgsTuned.pkg-config;
+                    };
+                    blas-c-rocm      = pkgsTuned.callPackage ./test/example-programs/blas-c/default.nix {
+                        inherit (pkgsTuned) blas pkg-config;
+                        inherit (pkgsTuned.rocmPackages) rocblas hipcc clr;
+                        isCpu = false;
                     };
                     blas-fortran     = pkgsTuned.callPackage ./test/example-programs/blas-fortran/default.nix {
                         blas = pkgsTuned.blas;
@@ -55,6 +59,28 @@
                     blas-python      = pkgsTuned.callPackage ./test/example-programs/blas-python/default.nix {
                         enableTorch = false;
                     };
+                }
+            );
+
+            # Provide a default app so `nix run .#buildinfo-c` executes a program out of the box
+            apps = forAllSystems (system:
+                let
+                    ex = self.packages.${system};
+                in rec {
+                    default = buildinfo-c;
+                    buildinfo-c = { type = "app"; program = "${ex.buildinfo-c}/bin/buildinfo-c"; };
+                    buildinfo-cpp = { type = "app"; program = "${ex.buildinfo-cpp}/bin/buildinfo-cpp"; };
+                    buildinfo-f90 = { type = "app"; program = "${ex.buildinfo-fortran}/bin/buildinfo-f90"; };
+                    buildinfo-fgo = { type = "app"; program = "${ex.buildinfo-go}/bin/buildinfo-go"; };
+                    buildinfo-hs = { type = "app"; program = "${ex.buildinfo-haskell}/bin/buildinfo-hs"; };
+                    buildinfo-py = { type = "app"; program = "${ex.buildinfo-python}/bin/buildinfo.py"; };
+                    buildinfo-r = { type = "app"; program = "${ex.buildinfo-r}/bin/buildinfo.R"; };
+                    buildinfo-rs = { type = "app"; program = "${ex.buildinfo-rust}/bin/buildinfo-rs"; };
+
+                    blas-c-cpu = { type = "app"; program = "${ex.blas-c-cpu}/bin/blas-test-c"; };
+                    blas-c-rocm = { type = "app"; program = "${ex.blas-c-rocm}/bin/blas-test-c"; };
+                    blas-f90 = { type = "app"; program = "${ex.blas-fortran}/bin/blas-test-f90"; };
+                    blas-py = { type = "app"; program = "${ex.blas-python}/bin/blas-test-py"; };
                 }
             );
 
