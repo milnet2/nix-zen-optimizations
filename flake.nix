@@ -4,9 +4,14 @@
     inputs = {
         nixpkgs.url = "github:nixos/nixpkgs/release-25.05";
         nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+        nix-unit = {
+            # https://nix-community.github.io/nix-unit/examples/flakes.html
+            url = "github:nix-community/nix-unit";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
     };
 
-    outputs = { self, nixpkgs, ... }:
+    outputs = { self, nixpkgs, nix-unit, ... }:
         let
             systems = [ "x86_64-linux" ];
             lib = nixpkgs.lib;
@@ -82,5 +87,40 @@
                     };
                 }
             );
+
+            # Wire tests into flake checks so `nix flake check` builds deps and also prints a readable report with -L
+            checks = forAllSystems (system:
+              let
+                pkgs = import nixpkgs { inherit system; };
+                testsSet = import ./zen-optimized-pkgs.test.nix {
+                  importablePkgsDelegate = nixpkgs;
+                  inherit lib;
+                };
+
+                # Evaluate tests at flake eval time to ensure outer Nix builds required derivations.
+                # Also render a stable, nix-unit-like text report for display from the builder log.
+                toStr = v: if builtins.isString v then v else builtins.toJSON v;
+
+                # Collect results and also assert pass/fail (so `nix flake check` fails on mismatch)
+                collect = prefix: t:
+                  if (builtins.isAttrs t) && (t ? expr) && (t ? expected) then
+                    let
+                      ok = (t.expr == t.expected);
+                      _ = assert ok; null; # cause `nix flake check` to fail if any test fails
+                      line = (if ok then "✔ " else "✗ ") + prefix;
+                    in [ line ]
+                  else if builtins.isAttrs t then
+                    lib.concatMap (name: collect (if prefix == "" then name else prefix + ": " + name) t.${name}) (lib.sort (a: b: a < b) (builtins.attrNames t))
+                  else [];
+
+                reportLines = collect "" testsSet;
+                reportText = lib.concatStringsSep "\n" reportLines + "\n";
+                report = pkgs.writeText "unit-tests-report.txt" reportText;
+              in {
+                # View output with: nix flake check -L
+                default = pkgs.runCommand "unit-tests" { inherit report; } ''
+                  cat "$report" | tee "$out"
+                '';
+              });
     };
 }

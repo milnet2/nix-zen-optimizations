@@ -17,6 +17,13 @@ You can run it using:
 nix run --no-write-lock-file github:nix-community/nix-unit -- --log-format bar ../zen-optimized-pkgs.test.nix
 ----
 
+Alternatively, from the repository root you can use flake checks (and see the same report with -L):
+
+[source,shell]
+----
+cd .. && nix flake check -L
+----
+
 [[test-individual]]
 === Run individually
 
