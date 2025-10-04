@@ -29,4 +29,15 @@ in {
         expr = buildInfoJson.compiler.py_version > 0;
         expected = true;
     };
+
+    "BLAS implementations (Python)" = {
+        "test BLAS on CPU" = {
+            expr = let
+                testProgram = pkgsTuned.callPackage ./example-programs/blas-python { };
+                testExecution = pkgsTuned.callPackage ./example-programs/blas-python/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
+                testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
+            in testResult.engine.name;
+            expected = "NumPy"; # We can't see what NumPy uses, sadly
+        };
+    };
 }

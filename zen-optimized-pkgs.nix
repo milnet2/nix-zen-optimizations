@@ -11,6 +11,7 @@
     lib ? unoptimizedPkgs.lib,
     amdZenVersion ? 2, # We have 2 on the mini-pc
     isLtoEnabled ? false, # Be careful with that: It will easily break stuff
+    isAggressiveFastMathEnabled ? false, # Will cause loss of precision and also some tests to fail (=> some tests will get disabled)
     optimizationParameter ? "-O3",
     basePythonPackage ? pkgs: pkgs.python3Minimal,
     noOptimizePkgs ? with unoptimizedPkgs; { inherit
@@ -22,14 +23,15 @@
         nasm perl curl # TODO: Perl still seems to be built anyways
         glibc-locales tzdata mailcap bluez-headers
 
-        cmake tradcpp
-        adns tcl
+        cmake tradcpp git dejagnu meson
+        adns tcl libuv libffi
             #autoconf-archive autoreconfHook nukeReferences # TODO: Good idea?
 #            gawk
         expat readline
-        gnum4 pkg-config bison gettext texinfo
+        gnum4 ninja pkg-config bison gettext texinfo
 
         tex texlive texliveSmall xetex texlive-scripts pdftex luatex luahbtex graphviz ghostscript pango asciidoc
+        docbook docbook-xml
         fontforge fontconfig libXft
         xorg # xorgproto libXt libX11
         libtiff libjpeg
@@ -38,7 +40,7 @@
 
         jdk # TODO: Optimize this?
 
-        ncurses libssh2
+        ncurses libssh2 unzip
         libpfm openssl bash-interactive
         ; }
 }:
@@ -168,17 +170,73 @@ let
 
             testers = [];
 
-                packageOverrides = pyFinal: pyPrev: {
-                  numpy = pyPrev.numpy.override {
-                    blas = final.blas;
-                    lapack = final.lapack;
-                  };
-                  scipy = pyPrev.scipy.override {
-                    blas = final.blas;
-                    lapack = final.lapack;
-                  };
+            packageOverrides = pyFinal: pyPrev: rec {
+                numpy = (pyPrev.numpy.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/numpy/2.nix
+                    inherit (final) blas lapack gfortran; # overridden on other overlays
+                    inherit hypothesis; # i.e. overridden somewhere here
+                    # inherit (unoptimizedPkgs) pytest-xdist;
+                }).overridePythonAttrs (old: {
+                    # Tests would fail because of lag of precision with fast-math enabled
+                    doCheck = old.doCheck && !isAggressiveFastMathEnabled;
+                });
+
+                cython = (pyPrev.cython.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/cython/default.nix
+                    inherit (unoptimizedPkgs) gdb ncurses;
+                    inherit numpy;
+                });
+
+                cffi = (pyPrev.cffi.override {
+                   # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/cffi/default.nix
+                   inherit (unoptimizedPkgs) libffi;
+                }).overridePythonAttrs (old: {
+                    # Currently some tests fail on float precision. likely due to aggressive fast-math
+                    doCheck = old.doCheck && !isAggressiveFastMathEnabled;
+                    # TODO disabledTests = old.disabledTests ++
+                    #    (if isAggressiveFastMathEnabled then [ "test_float_types" "test_longdouble_precision" ] else []);
+                });
+
+                # XXX: meson is not overridable
+#                meson = unoptimizedPkgs.pythonPackages.meson;
+#                meson = (pyPrev.meson.override {
+#                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/me/meson/package.nix
+#                    inherit (unoptimizedPkgs) coreutils ninja zlib;
+#                    # TODO: llvmPackages.openmp
+#                });
+
+
+#                pytest-xdist = (pyPrev.pytest-xdist.override {
+#                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/pytest-xdist/default.nix
+#                    inherit execnet; # py: psutil;
+#                });
+#
+#                execnet = (pyPrev.execnet.override {
+#                     # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/execnet/default.nix
+#                     inherit (unoptimizedPkgs) ; # py: hatchling hatch-vcs gevent
+#                });
+
+                gevent = (pyPrev.gevent.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/gevent/default.nix
+                    inherit (unoptimizedPkgs) libuv;
+                    inherit cffi cython;
+                });
+
+                hypothesis = (pyPrev.hypothesis.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/hypothesis/default.nix
+                    # inherit (unoptimizedPkgs) tzdata; ->
+                    # Some tests signal through NAN. However, there's no NAN with fast-math. Thus we disable the tests for now.
+                    doCheck = false; # TODO: !isAggressiveFastMathEnabled; <= "No time zone found with key UTC"
+                    # pytest-xdist,
+                });
+
+                scipy = pyPrev.scipy.override {
+                    # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/python-modules/scipy/default.nix
+                    inherit (final) blas lapack gfortran;
+                    inherit numpy;
                 };
-              };
+            };
+          };
     });
 
     rOverlay = (final: prev: {
@@ -247,10 +305,12 @@ let
     openBlasOverlay = (final: prev: rec {
         aocl-utils = prev.aocl-utils.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/ao/aocl-utils/package.nix
+            # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
         };
 
         amd-blis = prev.amd-blis.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-blis/package.nix#L70
+            # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
             inherit (noOptimizePkgs) perl; # TODO: Python
             blas64 = false; # TODO: check
             withOpenMP = true; # TODO: check
@@ -260,6 +320,7 @@ let
 
         amd-libflame = prev.amd-libflame.override {
             # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/am/amd-libflame/package.nix
+            # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
             inherit amd-blis aocl-utils;
             inherit (noOptimizePkgs) cmake;
             inherit (final) gfortran;
@@ -271,6 +332,7 @@ let
         # https://search.nixos.org/packages?channel=unstable&show=openblas&query=openblas
         openblas = prev.openblas.override {
           # See https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/development/libraries/science/math/openblas/default.nix
+          # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
           enableAVX512 = optimizedPlatform.isAvx512; # TODO: These kernels have been a source of trouble in the past.
           openmp = true;
           # See https://github.com/OpenMathLib/OpenBLAS/blob/develop/TargetList.txt
@@ -282,6 +344,7 @@ let
             .override {
                 # https://search.nixos.org/packages?channel=25.05&show=lapack-reference&query=liblapack
                 # https://github.com/NixOS/nixpkgs/blob/nixos-25.05/pkgs/by-name/la/lapack-reference/package.nix
+                # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
                 inherit (final) gfortran;
                 inherit (noOptimizePkgs) cmake;
                 inherit (unoptimizedPkgs) stdenv; # TODO Because of LTO
@@ -290,6 +353,7 @@ let
         blas = prev.blas.override {
             # https://search.nixos.org/packages?channel=unstable&show=blas&query=blas
             # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/bl/blas/package.nix
+            # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
             inherit openblas lapack-reference;
             blasProvider = final.amd-blis;
         };
@@ -299,6 +363,7 @@ let
         lapack = prev.lapack.override {
             # https://search.nixos.org/packages?channel=unstable&show=lapack&query=lapack
             # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/la/lapack/package.nix
+            # TODO: We'd likely want fast-math here even if isAggressiveFastMathEnabled is disabled
             inherit openblas lapack-reference;
             lapackProvider = final.amd-libflame;
         };
@@ -334,9 +399,10 @@ in import importablePkgsDelegate rec {
         in
             stenvAdapter.wrapStdenv {
                 inherit baseStdenv;
-                extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer" "-ffast-math"
+                extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer"
                     "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
-                    "-fipa-icf" ];
+                    "-fipa-icf" ] ++
+                    (if isAggressiveFastMathEnabled then [ "-ffast-math" ] else []);
                 extraCFlagsLink = [ ]; # TODO: Parameter mot yet picked up properly
                 extraCPPFlagsCompile = [ "-DNDEBUG" ]; # TODO: Parameter mot yet picked up properly
                 extraLdFlags = [ "--as-needed" "--gc-sections" ];

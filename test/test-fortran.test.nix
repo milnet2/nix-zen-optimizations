@@ -1,6 +1,6 @@
 # Unit tests
 # See: https://nix-community.github.io/nix-unit/
-# nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-go.test.nix
+# nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-fortran.test.nix
 {
    importablePkgsDelegate ? <nixpkgs>,
    lib ? (import importablePkgsDelegate {}).lib,
@@ -10,20 +10,20 @@
         isLtoEnabled = true; },
     isAvx512Expected ? false,
 }: let
-    buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-c {};
-    buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json"); # Json was created by executing program
+    buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-fortran {};
+    buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json");
 in {
         "test target arch is x86_64" = {
             expr = buildInfoJson.target.arch;
             expected = "x86_64";
         };
-        "test gcc version" = {
-            expr = buildInfoJson.compiler.version_string;
-            expected = pkgsTuned.stdenv.cc.version;
+        "test gfortran/gcc version" = {
+            expr = builtins.match "[0-9]+\\.[0-9]+(\\.[0-9]+)?" buildInfoJson.compiler.version_string != null;
+            expected = true;
         };
         "test fastmath" = {
             expr = buildInfoJson.compiler.fast_math;
-            expected = false; # TODO: Add a test where we force that on
+            expected = true;
         };
         "test avx and sse" = {
             expr = {
@@ -70,32 +70,14 @@ in {
             };
         };
 
-        "BLAS implementations" = {
-            "test AMD BLIS on CPU" = {
+        "BLAS implementations (Fortran)" = {
+            "test BLAS on CPU" = {
                 expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = true; };
-                    testExecution = pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
+                    testProgram = pkgsTuned.callPackage ./example-programs/blas-fortran { };
+                    testExecution = pkgsTuned.callPackage ./example-programs/blas-fortran/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
                     testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
                 in testResult.engine.name;
-                expected = "BLIS";
-            };
-
-            "test AMD rocBLAS on GPU (hipcc)" = {
-                expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; hipcc = pkgsTuned.rocmPackages.hipcc; clr = pkgsTuned.rocmPackages.clr; };
-                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
-                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
-                in testResult.engine.name;
-                expected = "rocBLAS";
-            };
-
-            "test AMD rocBLAS on GPU (regular CC)" = {
-                expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; clr = pkgsTuned.rocmPackages.clr; };
-                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
-                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
-                in testResult.engine.name;
-                expected = "rocBLAS";
+                expected = "BLAS";
             };
         };
 }

@@ -10,7 +10,7 @@
         isLtoEnabled = true; },
     isAvx512Expected ? false,
 }: let
-    buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-c {};
+    buildInfoProgram = pkgsTuned.callPackage ./example-programs/buildinfo-cpp {};
     buildInfoJson = builtins.fromJSON (builtins.readFile "${buildInfoProgram}/lib/buildinfo.json"); # Json was created by executing program
 in {
         "test target arch is x86_64" = {
@@ -67,35 +67,6 @@ in {
                 avx512ifma = isAvx512Expected;
                 avx512vbmi = isAvx512Expected;
                 avx512vnni = isAvx512Expected;
-            };
-        };
-
-        "BLAS implementations" = {
-            "test AMD BLIS on CPU" = {
-                expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = true; };
-                    testExecution = pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
-                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
-                in testResult.engine.name;
-                expected = "BLIS";
-            };
-
-            "test AMD rocBLAS on GPU (hipcc)" = {
-                expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; hipcc = pkgsTuned.rocmPackages.hipcc; clr = pkgsTuned.rocmPackages.clr; };
-                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
-                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
-                in testResult.engine.name;
-                expected = "rocBLAS";
-            };
-
-            "test AMD rocBLAS on GPU (regular CC)" = {
-                expr = let
-                    testProgram = pkgsTuned.callPackage ./example-programs/blas-c { isCpu = false; rocblas = pkgsTuned.rocmPackages.rocblas; clr = pkgsTuned.rocmPackages.clr; };
-                    testExecution = (pkgsTuned.callPackage ./example-programs/blas-c/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; spoofGpu = "9.0.0"; });
-                    testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
-                in testResult.engine.name;
-                expected = "rocBLAS";
             };
         };
 }

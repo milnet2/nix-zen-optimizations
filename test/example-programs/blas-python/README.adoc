@@ -1,0 +1,85 @@
+== BLAS example program (Python)
+
+A simple long-running BLAS job implemented in Python using NumPy (CPU) and optionally PyTorch (GPU).
+
+- Performs multiple single-precision matrix multiplications (SGEMM): C = A × B with column-major (Fortran) arrays, no transposes, alpha=1, beta=0.
+- Repeats the GEMM operation a configurable number of times and measures only the time spent inside the GEMM calls.
+- CPU backend via the BLAS provider that NumPy is linked against (e.g., OpenBLAS, BLIS, MKL).
+- Optional GPU backend via PyTorch (CUDA or ROCm). Selected at runtime with --backend gpu (or BLAS_BACKEND=gpu). Falls back to CPU if unavailable.
+
+Example JSON result:
+
+[source,json]
+----
+{
+  "engine": {"name":"NumPy","version":"..."},
+  "input": {"M":4096,"N":4096,"K":4096,"repeats":100,"expected_bytes_total":201326592,"expected_megabytes_total":192.0},
+  "output": {"time_sec": 23.435000, "gflops": 586.46, "checksum": -2304.952393}
+}
+----
+
+=== Building with Nix
+
+CPU (NumPy/BLAS)::
+[source,bash]
+----
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { }' && \
+./result/bin/blas-test 4096 4096 100
+----
+
+GPU (PyTorch; requires a PyTorch build with CUDA or ROCm)::
+[source,bash]
+----
+# Enable PyTorch in the Python environment used by the script
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { enableTorch = true; }' && \
+./result/bin/blas-test --backend gpu 4096 4096 100
+----
+
+=== Using Optimized Nix (with Zen optimizations)
+
+To build the program with the optimized Nix setup from this repository:
+
+CPU::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { }' && \
+./result/bin/blas-test --backend cpu 4096 4096 100
+----
+
+GPU (PyTorch; requires ROCm/CUDA-enabled PyTorch)::
+[source,bash]
+----
+nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { enableTorch = true; }' && \
+./result/bin/blas-test --backend gpu 4096 4096 100
+----
+
+
+=== ROCm notes and troubleshooting
+
+If you have AMD GPUs with ROCm and see an error like "torch.cuda not available":
+
+- This program now detects ROCm-built PyTorch and will attempt to use the GPU even if torch.cuda.is_available() is false by probing a tiny allocation on the 'cuda' device (which aliases HIP on ROCm builds).
+- Ensure your PyTorch is built with ROCm. In Python, check:
++
+[source,python]
+----
+import torch
+print('torch.version.hip =', getattr(torch.version, 'hip', None))
+print('torch.version.cuda =', getattr(torch.version, 'cuda', None))
+----
+
+- If your GPU is unofficially supported, you may need to spoof the GFX version, similarly to the C example:
++
+[source,bash]
+----
+HSA_OVERRIDE_GFX_VERSION=9.0.0 ./result/bin/blas-test --backend gpu 4096 4096 100
+----
+
+- Also verify that the GPU is visible to ROCm (HIP):
++
+[source,bash]
+----
+echo $HIP_VISIBLE_DEVICES  # should allow access to at least one GPU
+----
+
+If GPU is still not usable, the program will print a JSON with an "error" field containing a hint (e.g., ROCm build detected but GPU not available). Falling back to CPU is available with --backend cpu.
