@@ -5,6 +5,7 @@
 {
     wrapStdenv = {
         baseStdenv, # The env to wrap
+        name,
         isLocalNativeBuilds ? false, # Set -march=native and other related flags
 
         extraCFlagsCompile ? [], # Appended to env NIX_CFLAGS_COMPILE
@@ -19,9 +20,11 @@
         assert lib.assertMsg (! builtins.elem "-mcpu=native" extraCFlagsCompile)
             "Use the parameter `isLocalNativeBuilds = true` instead of using -mcpu=native";
 
-        lib.pipe baseStdenv [
+        (lib.pipe baseStdenv [
             (se: pkgs.stdenvAdapters.withCFlags (extraCFlagsCompile ++ builtins.map (ldFlag: "-Wl,${ldFlag}") extraLdFlags) se)
             (se: pkgs.stdenvAdapters.withDefaultHardeningFlags [] se) # TODO: Do this properly
             (se: if (isLocalNativeBuilds) then (pkgs.stdenvAdapters.impureUseNativeOptimizations se) else se)
-        ];
+        ]) // {
+            inherit name;
+        };
 }

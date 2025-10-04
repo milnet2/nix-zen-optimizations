@@ -24,6 +24,7 @@ in rec {
 
     reallySafeTweaks = stenvAdapter.wrapStdenv {
         inherit baseStdenv;
+        name = "reallySafeTweaks";
         extraCFlagsCompile = [
             optimizationParameter "-march=${cpuNameCc}" "-mtune=${cpuNameCc}"
             ];
@@ -33,6 +34,7 @@ in rec {
     # Has optimizations which are typically safe to do (-O3, -march, -mtune) etc
     safeTweaks = stenvAdapter.wrapStdenv {
         baseStdenv = reallySafeTweaks;
+        name = "safeTweaks";
         extraCFlagsCompile = [
             "-fomit-frame-pointer" "-fipa-icf" "-pipe"
             # "-DNDEBUG" # TODO: This makes the meson-build fail :(
@@ -45,18 +47,20 @@ in rec {
 
     # Enabling link-time-optimizations will break several packages. It can be beneficial for selected packages, though.
     withLto = stenvAdapter.wrapStdenv {
-       baseStdenv = safeTweaks;
-       extraCFlagsCompile = [
-           ltoEnabledParam # --lto=auto (or --lto=thin)
-           ];
-     };
+        baseStdenv = safeTweaks;
+        name = "withLto";
+        extraCFlagsCompile = [
+            ltoEnabledParam # --lto=auto (or --lto=thin)
+            ];
+    };
 
     # Doing fast-math will only have an impact on a few packages. Enabling it globally would easily break stuff
     withAggressiveFastMath = stenvAdapter.wrapStdenv {
-         baseStdenv = safeTweaks;
-         extraCFlagsCompile = [
-             "-ffast-math"
-             ];
-         # TODO: Do we want to also change `libc`?
-     };
+        baseStdenv = safeTweaks;
+        name = "withAggressiveFastMath";
+        extraCFlagsCompile = [
+            "-ffast-math"
+            ];
+        # TODO: Do we want to also change `libc`?
+    };
 }
