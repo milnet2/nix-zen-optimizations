@@ -394,20 +394,9 @@ in import importablePkgsDelegate rec {
 
     config.replaceStdenv = { pkgs, ...}:
         let
-            baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
-            stenvAdapter = pkgs.callPackage ./helper/my-stenv-adapter.nix {};
-        in
-            stenvAdapter.wrapStdenv {
-                inherit baseStdenv;
-                extraCFlagsCompile = [ optimizationParameter "-fomit-frame-pointer"
-                    "-march=${optimizedPlatform.platform.gcc.arch}" "-mtune=${optimizedPlatform.platform.gcc.tune}"
-                    "-fipa-icf" ] ++
-                    (if isAggressiveFastMathEnabled then [ "-ffast-math" ] else []);
-                extraCFlagsLink = [ ]; # TODO: Parameter mot yet picked up properly
-                extraCPPFlagsCompile = [ "-DNDEBUG" ]; # TODO: Parameter mot yet picked up properly
-                extraLdFlags = [ "--as-needed" "--gc-sections" ];
-                extraHardeningDisable = [ "fortify" ]; # TODO: Parameter mot yet picked up properly
-
-                # TODO: Do we want to also change `libc`?
+            stdenvs = import ./helper/stdenvs.nix {
+                baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+                inherit importablePkgsDelegate unoptimizedPkgs amdZenVersion optimizationParameter;
             };
+        in if (isAggressiveFastMathEnabled) then stdenvs.withAggressiveFastMath else stdenvs.safeTweaks;
 }
