@@ -78,81 +78,13 @@ let
 
     # ---------------------------------------------
     # Overrides follow (programming languages)
-    fortranOverlay = (final: prev: {
-        gfortran = prev.symlinkJoin {
-            name = "gfortran-${optimizedPlatform.platform.gcc.tune}";
-            paths = [ prev.gfortran ];
-            buildInputs = [ prev.makeWrapper ];
-            # Classic Fortran flags; projects pick up FFLAGS/FCFLAGS, and Nix’s generic builder
-            # respects NIX_FFLAGS_COMPILE similarly to NIX_CFLAGS_COMPILE.
-            postBuild = ''
-              wrapProgram $out/bin/gfortran \
-                --set-default FFLAGS   "-O3 -pipe -fomit-frame-pointer -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}" \
-                --set-default FCFLAGS  "-O3 -pipe -fomit-frame-pointer -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}" \
-                --set-default NIX_FFLAGS_COMPILE "-O3 -pipe -fomit-frame-pointer -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune}"
-            '';
-        };}
-    );
+    fortranOverlay = import ./overlays/compiler/fortran/default.nix { inherit optimizedPlatform; };
 
-    goOverlay = (final: prev: rec {
-        go = prev.symlinkJoin {
-           # https://search.nixos.org/packages?channel=unstable&show=go&query=go
-           name = "go-${optimizedPlatform.platform.go.GOARCH}-${optimizedPlatform.platform.go.GOAMD64}";
-           paths = [ unoptimizedPkgs.go ];
-           buildInputs = [ unoptimizedPkgs.makeWrapper ];
-           # https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/setup-hooks/make-wrapper.sh
-           postBuild = ''
-               wrapProgram $out/bin/go \
-                    --set GOOS "${optimizedPlatform.platform.go.GOOS}" \
-                    --set GOARCH "${optimizedPlatform.platform.go.GOARCH}" \
-                    --set GOAMD64 "${optimizedPlatform.platform.go.GOAMD64}" \
-                    --set-default CGO_CFLAGS "${optimizationParameter} -fomit-frame-pointer -ffast-math -march=${optimizedPlatform.platform.gcc.arch} -mtune=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-flto=auto" else ""} -fipa-icf" \
-                    --set-default CGO_LDFLAGS "--as-needed --gc-sections"
-               '';
-        } // {
-            inherit (unoptimizedPkgs.go) badTargetPlatforms CGO_ENABLED;
-            GOOS = optimizedPlatform.platform.go.GOOS;
-            GOARCH = optimizedPlatform.platform.go.GOARCH;
-            GOAMD64 = optimizedPlatform.platform.go.GOAMD64;
-            meta = unoptimizedPkgs.go.meta // {
-                platforms = [ optimizedPlatform.platform ]; };
-        };
+    goOverlay = import ./overlays/compiler/go/default.nix { inherit optimizedPlatform unoptimizedPkgs isLtoEnabled; };
 
-        buildGoModule = prev.buildGoModule.override {
-            # https://github.com/NixOS/nixpkgs/blob/master/pkgs/build-support/go/module.nix
-            inherit go;
-        };
-        }
-    );
+    haskellOverlay = import ./overlays/compiler/haskell/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
 
-    haskellOverlay = (final: prev: rec {
-        # Need to compile-in LLVM into the systems ghc as it doesn't have this enabled by default and
-        # some optimizations only seem to be available through LLVM
-        ghcWithLlvm = ((unoptimizedPkgs.ghc)  # (unoptimizedPkgs.haskell.compiler.ghcHEAD)
-            .override {
-                useLLVM = true;
-                # buildTargetLlvmPackages = false;
-            });
-        ghc = let
-            llvmFlags = [
-                "-mcpu=${optimizedPlatform.platform.gcc.tune}"
-                "-enable-unsafe-fp-math"
-                "-enable-no-nans-fp-math"
-                "-enable-no-infs-fp-math"
-                "-enable-no-signed-zeros-fp-math"
-                ];
-            llvmFlagsGhcWrapped = toString ( map (x: "-optlc " + x) llvmFlags);
-        in prev.symlinkJoin {
-           name = "ghc-${optimizedPlatform.platform.gcc.arch}";
-           paths = [ ghcWithLlvm ];
-           buildInputs = [ unoptimizedPkgs.makeWrapper ];
-           # https://downloads.haskell.org/ghc/latest/docs/users_guide/flags.html
-           postBuild = ''
-               wrapProgram $out/bin/ghc \
-                      --add-flags "${optimizationParameter} -fllvm ${llvmFlagsGhcWrapped}"
-               '';
-        };
-    });
+    rustOverlay = import ./overlays/compiler/rust/default.nix { inherit optimizedPlatform unoptimizedPkgs isLtoEnabled; };
 
     pythonOverlay = (final: prev: {
         # https://search.nixos.org/packages?channel=unstable&show=python3&query=python3
@@ -264,38 +196,6 @@ let
             };
           });
     });
-
-    rustOverlay = (final: prev: rec {
-        rustc = prev.symlinkJoin {
-           name = "rustc-${optimizedPlatform.platform.gcc.tune}";
-           paths = [ unoptimizedPkgs.rustc ];
-           buildInputs = [ unoptimizedPkgs.makeWrapper ];
-           postBuild = ''
-               wrapProgram $out/bin/rustc \
-                   --add-flags "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""} -C codegen-units=1"
-           '';
-        } // {
-            inherit (unoptimizedPkgs.rustc) badTargetPlatforms;
-            meta = unoptimizedPkgs.rustc.meta // {
-                platforms = unoptimizedPkgs.rustc.meta.platforms ++ optimizedPlatform.platform; };
-            targetPlatforms = [ optimizedPlatform.platform ];
-        };
-        cargo = prev.symlinkJoin {
-            # https://search.nixos.org/packages?channel=unstable&show=cargo&query=cargo
-            name = "cargo-${optimizedPlatform.platform.gcc.tune}";
-            paths = [ unoptimizedPkgs.cargo ];
-            buildInputs = [ unoptimizedPkgs.makeWrapper ];
-            postBuild = ''
-                wrapProgram $out/bin/cargo \
-                    --set NIX_RUSTFLAGS "-C target-cpu=${optimizedPlatform.platform.gcc.tune} ${if isLtoEnabled then "-C lto=${optimizedPlatform.platform.rust.lto}" else ""}  -C codegen-units=1"
-            '';
-        } // {
-            inherit (prev.cargo) badTargetPlatforms;
-            meta = unoptimizedPkgs.cargo.meta // {
-                platforms = rustc.meta.platforms; };
-            targetPlatforms = [ optimizedPlatform.platform ];
-        };}
-    );
 
     # ---------------------------------------------
     # Overrides follow (libraries)
