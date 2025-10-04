@@ -88,39 +88,23 @@
                 }
             );
 
-            # Wire tests into flake checks so `nix flake check` builds deps and also prints a readable report with -L
-            checks = forAllSystems (system:
-              let
-                pkgs = import nixpkgs { inherit system; };
-                testsSet = import ./zen-optimized-pkgs.test.nix {
-                  importablePkgsDelegate = nixpkgs;
-                  inherit lib;
-                };
-
-                # Evaluate tests at flake eval time to ensure outer Nix builds required derivations.
-                # Also render a stable, nix-unit-like text report for display from the builder log.
-                toStr = v: if builtins.isString v then v else builtins.toJSON v;
-
-                # Collect results and also assert pass/fail (so `nix flake check` fails on mismatch)
-                collect = prefix: t:
-                  if (builtins.isAttrs t) && (t ? expr) && (t ? expected) then
-                    let
-                      ok = (t.expr == t.expected);
-                      _ = assert ok; null; # cause `nix flake check` to fail if any test fails
-                      line = (if ok then "✔ " else "✗ ") + prefix;
-                    in [ line ]
-                  else if builtins.isAttrs t then
-                    lib.concatMap (name: collect (if prefix == "" then name else prefix + ": " + name) t.${name}) (lib.sort (a: b: a < b) (builtins.attrNames t))
-                  else [];
-
-                reportLines = collect "" testsSet;
-                reportText = lib.concatStringsSep "\n" reportLines + "\n";
-                report = pkgs.writeText "unit-tests-report.txt" reportText;
-              in {
-                # View output with: nix flake check -L
-                default = pkgs.runCommand "unit-tests" { inherit report; } ''
-                  cat "$report" | tee "$out"
-                '';
-              });
+# TODO: This does not work as it would try to access the internet
+#            checks = forAllSystems (system: {
+#                default =
+#                    nixpkgs.legacyPackages.${system}.runCommand "tests"
+#                        {
+#                            nativeBuildInputs = [ nix-unit.packages.${system}.default ];
+#                            NIX_PATH = "nixpkgs=${nixpkgs}";
+#                        }
+#                        ''
+#                            set -euo pipefail
+#                            export HOME="$(realpath .)"
+#                            nix-unit \
+#                                --eval-store "$HOME" \
+#                                --log-format bar \
+#                                ${./.}/zen-optimized-pkgs.test.nix
+#                            touch $out
+#                        '';
+#            });
     };
 }
