@@ -37,7 +37,7 @@ in {
                 testExecution = pkgsTuned.callPackage ./example-programs/blas-python/test.nix { blas-test = testProgram; m = 2048; n = 2048; iterations = 10; };
                 testResult = (builtins.fromJSON (builtins.readFile "${testExecution}/lib/result.json"));
             in testResult.engine.name;
-            expected = "BLAS";
+            expected = "NumPy"; # We can't see what NumPy uses, sadly
         };
     };
 }

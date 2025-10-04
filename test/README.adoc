@@ -26,6 +26,12 @@ C::
 nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-c.test.nix
 ----
 
+C++::
+[source,shell]
+----
+nix run --no-write-lock-file github:nix-community/nix-unit -- ./test-cpp.test.nix
+----
+
 Fortran::
 [source,shell]
 ----
