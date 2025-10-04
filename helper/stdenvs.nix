@@ -35,7 +35,7 @@ in rec {
         baseStdenv = reallySafeTweaks;
         extraCFlagsCompile = [
             "-fomit-frame-pointer" "-fipa-icf" "-pipe"
-            "-DNDEBUG"
+            # "-DNDEBUG" # TODO: This makes the meson-build fail :(
             ];
         extraLdFlags = [ "--as-needed" "--gc-sections" ];
         extraHardeningDisable = [ "fortify" ]; # TODO: Parameter mot yet picked up properly
