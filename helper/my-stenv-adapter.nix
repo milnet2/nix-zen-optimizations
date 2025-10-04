@@ -8,8 +8,6 @@
         isLocalNativeBuilds ? false, # Set -march=native and other related flags
 
         extraCFlagsCompile ? [], # Appended to env NIX_CFLAGS_COMPILE
-        extraCFlagsLink ? [], # Appended to env NIX_CFLAGS_LINK - TODO: Unused
-        extraCPPFlagsCompile ? [], # Appended to NIX_CPPFLAGS_COMPILE - TODO: Unused
         extraLdFlags ? [], # Appended to NIX_LDFLAGS
 
         # TODO: NIX_RUSTFLAGS
