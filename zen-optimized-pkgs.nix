@@ -38,7 +38,7 @@
 
         rocmPackages # I think, these typically use their own compiler (hipcc) anyways
 
-        jdk # TODO: Optimize this?
+        jdk
 
         ncurses libssh2 unzip
         libpfm openssl bash-interactive
@@ -76,28 +76,26 @@ let
         };
     };
 
+    # The stdenvs are templates with different optimizations applied to them.
+    # We'll use them to mix-and-match later...
+    stdenvs = import ./helper/stdenvs.nix {
+        baseStdenv = unoptimizedPkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
+        inherit importablePkgsDelegate unoptimizedPkgs amdZenVersion optimizationParameter; };
+
     # ---------------------------------------------
-    # Overrides follow (programming languages)
+    # Overlay imports follow
+
     fortranOverlay = import ./overlays/compiler/fortran/default.nix { inherit optimizedPlatform; };
-
     goOverlay = import ./overlays/compiler/go/default.nix { inherit optimizedPlatform unoptimizedPkgs isLtoEnabled; };
-
     haskellOverlay = import ./overlays/compiler/haskell/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
-
     rustOverlay = import ./overlays/compiler/rust/default.nix { inherit optimizedPlatform unoptimizedPkgs isLtoEnabled; };
-
     pythonOverlay = import ./overlays/interpreter/python/default.nix { inherit optimizedPlatform unoptimizedPkgs basePythonPackage isLtoEnabled isAggressiveFastMathEnabled; };
-
     rOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
-
-    # ---------------------------------------------
-    # Overrides follow (libraries)
-
     openBlasOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs amdZenVersion; };
-
-    # TODO: OpenMP
+    # TODO: OpenMP ??
 
 in import importablePkgsDelegate rec {
+    #inherit (unoptimizedPkgs) config;
     config.allowUnfree = true;
     localSystem = optimizedPlatform;
 
@@ -119,10 +117,5 @@ in import importablePkgsDelegate rec {
     ];
 
     config.replaceStdenv = { pkgs, ...}:
-        let
-            stdenvs = import ./helper/stdenvs.nix {
-                baseStdenv = pkgs.gcc15Stdenv; # TODO: Or pkgs.gcc_latest.stdenv? or pkgs.llvmPackages_latest.stdenv?
-                inherit importablePkgsDelegate unoptimizedPkgs amdZenVersion optimizationParameter;
-            };
-        in if (isAggressiveFastMathEnabled) then stdenvs.withAggressiveFastMath else stdenvs.safeTweaks;
+        if (isAggressiveFastMathEnabled) then stdenvs.withAggressiveFastMath else stdenvs.safeTweaks;
 }
