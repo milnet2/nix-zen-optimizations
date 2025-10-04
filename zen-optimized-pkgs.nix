@@ -90,9 +90,8 @@ let
     haskellOverlay = import ./overlays/compiler/haskell/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
     rustOverlay = import ./overlays/compiler/rust/default.nix { inherit optimizedPlatform unoptimizedPkgs isLtoEnabled; };
     pythonOverlay = import ./overlays/interpreter/python/default.nix { inherit optimizedPlatform unoptimizedPkgs basePythonPackage isLtoEnabled isAggressiveFastMathEnabled; };
-    rOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
-    openBlasOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs amdZenVersion; };
     rOverlay = import ./overlays/interpreter/r/default.nix { inherit optimizedPlatform unoptimizedPkgs; };
+    openBlasOverlay = import ./overlays/library/blas-lapack/default.nix { inherit optimizedPlatform unoptimizedPkgs stdenvs amdZenVersion; };
     # TODO: OpenMP ??
 
 in import importablePkgsDelegate rec {

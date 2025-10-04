@@ -22,11 +22,18 @@ in rec {
     # to rebuild yourself
     upstream = unoptimizedPkgs.stdenv;
 
-    # Has optimizations which are typically safe ot do (-O3, -march, -mtune) etc
-    safeTweaks = stenvAdapter.wrapStdenv {
+    reallySafeTweaks = stenvAdapter.wrapStdenv {
         inherit baseStdenv;
         extraCFlagsCompile = [
             optimizationParameter "-march=${cpuNameCc}" "-mtune=${cpuNameCc}"
+            ];
+        # TODO: Do we want to also change `libc`?
+    };
+
+    # Has optimizations which are typically safe to do (-O3, -march, -mtune) etc
+    safeTweaks = stenvAdapter.wrapStdenv {
+        baseStdenv = reallySafeTweaks;
+        extraCFlagsCompile = [
             "-fomit-frame-pointer" "-fipa-icf" "-pipe"
             "-DNDEBUG"
             ];
