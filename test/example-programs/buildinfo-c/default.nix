@@ -27,7 +27,7 @@ stdenv.mkDerivation {
   
   installPhase = ''
     mkdir -p $out/bin
-    cp buildinfo $out/bin/
+    cp buildinfo $out/bin/buildinfo-c
     mkdir -p $out/lib
     cp buildinfo.log $out/lib
     cp buildinfo.json $out/lib

@@ -25,7 +25,7 @@ CPU (BLAS)::
 [source,bash]
 ----
 nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix { blas = blas; }' && \
-./result/bin/blas-test 4096 4096 100
+./result/bin/blas-test-f90 4096 4096 100
 ----
 
 === Using Optimized Nix (with Zen optimizations)
@@ -36,5 +36,5 @@ CPU::
 [source,bash]
 ----
 nix-build -E 'with import ./../../../zen-optimized-pkgs.nix {}; callPackage ./default.nix { blas = blas; }' && \
-./result/bin/blas-test 4096 4096 100
+./result/bin/blas-test-f90 4096 4096 100
 ----

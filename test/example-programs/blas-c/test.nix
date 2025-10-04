@@ -10,13 +10,13 @@ stdenv.mkDerivation {
     if (spoofGpu != null) then
         ''
         set +e
-        HSA_OVERRIDE_GFX_VERSION='${spoofGpu}' ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} >result.json
+        HSA_OVERRIDE_GFX_VERSION='${spoofGpu}' ${blas-test}/bin/blas-test-c ${toString m} ${toString n} ${toString iterations} | tee result.json
         set -e
         ''
     else
         ''
         set +e
-        ${blas-test}/bin/blas-test ${toString m} ${toString n} ${toString iterations} >result.json
+        ${blas-test}/bin/blas-test-c ${toString m} ${toString n} ${toString iterations} | tee result.json
         set -e
         '';
 
